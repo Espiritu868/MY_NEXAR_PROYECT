@@ -50,42 +50,38 @@ public class PanelBuscarProducto extends JPanel {
         this.add(panelSuperior, BorderLayout.NORTH);
 
         // --- TABLA DE INVENTARIO ---
-        // El ID está oculto en la columna 0 para poder editar/eliminar en BD
         String[] columnas = {"ID", "Foto", "Código", "Producto", "P. Compra", "P. Venta", "P. Técnico", "Stock", "Acciones"};
         modeloTabla = new DefaultTableModel(null, columnas) {
             @Override
-            public boolean isCellEditable(int row, int column) { return column == 8; } // Solo Acciones editable
+            public boolean isCellEditable(int row, int column) { return column == 8; }
         };
 
         tablaInventario = new JTable(modeloTabla);
         tablaInventario.setShowGrid(false);
-        tablaInventario.setRowHeight(70); // Fila alta para aspecto de "tarjeta"
+        tablaInventario.setRowHeight(70); 
         tablaInventario.setBackground(new Color(30, 30, 30));
         tablaInventario.setForeground(Color.WHITE);
         tablaInventario.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         tablaInventario.setSelectionBackground(new Color(50, 50, 50));
 
-        // Cabecera
         tablaInventario.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
         tablaInventario.getTableHeader().setBackground(new Color(22, 22, 22));
         tablaInventario.getTableHeader().setForeground(new Color(180, 180, 180));
         tablaInventario.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(70, 70, 70)));
         tablaInventario.getTableHeader().setPreferredSize(new Dimension(0, 45));
 
-        // Configuración de anchos y columnas ocultas
         tablaInventario.getColumnModel().getColumn(0).setMinWidth(0);
-        tablaInventario.getColumnModel().getColumn(0).setMaxWidth(0); // Ocultar ID
+        tablaInventario.getColumnModel().getColumn(0).setMaxWidth(0); 
 
-        tablaInventario.getColumnModel().getColumn(1).setPreferredWidth(80); // Foto
+        tablaInventario.getColumnModel().getColumn(1).setPreferredWidth(80); 
         tablaInventario.getColumnModel().getColumn(1).setMaxWidth(80);
         tablaInventario.getColumnModel().getColumn(1).setCellRenderer(new ImagenProductoRenderer());
 
-        tablaInventario.getColumnModel().getColumn(8).setPreferredWidth(100); // Acciones
+        tablaInventario.getColumnModel().getColumn(8).setPreferredWidth(100); 
         tablaInventario.getColumnModel().getColumn(8).setMaxWidth(100);
         tablaInventario.getColumnModel().getColumn(8).setCellRenderer(new PanelAccionesRenderer());
         tablaInventario.getColumnModel().getColumn(8).setCellEditor(new PanelAccionesEditor());
 
-        // LÓGICA DEL BUSCADOR
         sorter = new TableRowSorter<>(modeloTabla);
         tablaInventario.setRowSorter(sorter);
         txtBusqueda.getDocument().addDocumentListener(new DocumentListener() {
@@ -95,7 +91,40 @@ public class PanelBuscarProducto extends JPanel {
             private void filtrar() {
                 String texto = txtBusqueda.getText();
                 if (texto.trim().length() == 0) sorter.setRowFilter(null);
-                else sorter.setRowFilter(RowFilter.regexFilter("(?i)" + texto, 2, 3)); // Filtra por Código o Nombre
+                else sorter.setRowFilter(RowFilter.regexFilter("(?i)" + texto, 2, 3)); 
+            }
+        });
+
+        // --- LÓGICA DE CURSORES Y CLICS EN TABLA ---
+        tablaInventario.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
+            @Override
+            public void mouseMoved(java.awt.event.MouseEvent e) {
+                int columna = tablaInventario.columnAtPoint(e.getPoint());
+                // El cursor de mano solo aparece si pasas sobre la Foto (1) o las Acciones (8)
+                if (columna == 1 || columna == 8) {
+                    tablaInventario.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                } else {
+                    tablaInventario.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                }
+            }
+        });
+
+        tablaInventario.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                int fila = tablaInventario.rowAtPoint(e.getPoint());
+                int columna = tablaInventario.columnAtPoint(e.getPoint());
+                if (fila >= 0 && columna == 1) { // 1 es la columna Foto
+                    int filaModelo = tablaInventario.convertRowIndexToModel(fila);
+                    String rutaImagen = (String) modeloTabla.getValueAt(filaModelo, 1);
+                    
+                    if (rutaImagen == null || rutaImagen.isEmpty() || !new File(rutaImagen).exists()) {
+                        if (SesionGlobal.getEmpresaActual() != null && SesionGlobal.getEmpresaActual().getLogoEmpresaRuta() != null) {
+                            rutaImagen = SesionGlobal.getEmpresaActual().getLogoEmpresaRuta();
+                        }
+                    }
+                    mostrarZoomImagen(rutaImagen);
+                }
             }
         });
 
@@ -161,7 +190,7 @@ public class PanelBuscarProducto extends JPanel {
             return label;
         }
     }
-
+    
     // =========================================================
     // CLASES PARA BOTONES DE ACCIÓN (LÁPIZ Y BASURERO)
     // =========================================================
@@ -193,8 +222,16 @@ public class PanelBuscarProducto extends JPanel {
         public PanelAcciones() {
             setLayout(new FlowLayout(FlowLayout.CENTER, 8, 20)); // Margen superior para centrar verticalmente
             setOpaque(true);
-            btnEditar = new JButton(new IconoEditar()); btnEditar.setContentAreaFilled(false); btnEditar.setBorder(null); btnEditar.setCursor(new Cursor(Cursor.HAND_CURSOR)); btnEditar.setToolTipText("Editar Producto");
-            btnEliminar = new JButton(new IconoEliminar()); btnEliminar.setContentAreaFilled(false); btnEliminar.setBorder(null); btnEliminar.setCursor(new Cursor(Cursor.HAND_CURSOR)); btnEliminar.setToolTipText("Eliminar Producto");
+            btnEditar = new JButton(new IconoEditar()); 
+            btnEditar.setContentAreaFilled(false); 
+            btnEditar.setBorder(null); 
+            btnEditar.setCursor(new Cursor(Cursor.HAND_CURSOR)); 
+            btnEditar.setToolTipText("Editar Producto");
+            btnEliminar = new JButton(new IconoEliminar()); 
+            btnEliminar.setContentAreaFilled(false); 
+            btnEliminar.setBorder(null); 
+            btnEliminar.setCursor(new Cursor(Cursor.HAND_CURSOR)); 
+            btnEliminar.setToolTipText("Eliminar Producto");
             add(btnEditar); add(btnEliminar);
         }
         public JButton getBtnEditar() { return btnEditar; } public JButton getBtnEliminar() { return btnEliminar; }
@@ -259,6 +296,80 @@ public class PanelBuscarProducto extends JPanel {
             return panel;
         }
         @Override public Object getCellEditorValue() { return null; }
+    }
+    
+    private void mostrarZoomImagen(String ruta) {
+        if (ruta == null || !new File(ruta).exists()) return;
+        
+        JDialog zoomDialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Previsualización del Producto", true);
+        zoomDialog.setLayout(new BorderLayout());
+        zoomDialog.getContentPane().setBackground(new Color(18, 18, 18)); 
+        
+        int tamanoEstandar = 600;
+        zoomDialog.setSize(tamanoEstandar, tamanoEstandar);
+        
+        Image imgOriginal = new ImageIcon(ruta).getImage();
+        int anchoOriginal = imgOriginal.getWidth(null);
+        int altoOriginal = imgOriginal.getHeight(null);
+        
+        if (anchoOriginal <= 0 || altoOriginal <= 0) return;
+
+        int nuevoAncho = tamanoEstandar - 40;
+        int nuevoAlto = tamanoEstandar - 40;
+        
+        if (anchoOriginal > altoOriginal) {
+            nuevoAlto = (altoOriginal * nuevoAncho) / anchoOriginal;
+        } else {
+            nuevoAncho = (anchoOriginal * nuevoAlto) / altoOriginal;
+        }
+        
+        // --- LLAMADA AL MOTOR DE ESCALADO PROGRESIVO ---
+        java.awt.image.BufferedImage imgNitida = escalarConMaximaNitidez(imgOriginal, nuevoAncho, nuevoAlto);
+        
+        JLabel lblZoom = new JLabel(new ImageIcon(imgNitida));
+        lblZoom.setHorizontalAlignment(SwingConstants.CENTER);
+        
+        zoomDialog.add(lblZoom, BorderLayout.CENTER);
+        zoomDialog.setLocationRelativeTo(this);
+        zoomDialog.setVisible(true);
+    }
+
+    /**
+     * Reduce las dimensiones de la imagen por pasos intermedios para evitar la pérdida de definición.
+     */
+    private java.awt.image.BufferedImage escalarConMaximaNitidez(Image img, int targetWidth, int targetHeight) {
+        int w = img.getWidth(null);
+        int h = img.getHeight(null);
+        
+        // Crear un lienzo inicial en RAM con la imagen original
+        java.awt.image.BufferedImage scratch = new java.awt.image.BufferedImage(w, h, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = scratch.createGraphics();
+        g2.drawImage(img, 0, 0, null);
+        g2.dispose();
+        
+        // Reducción progresiva dividiendo por 2 hasta acercarnos al tamaño final
+        while (w > targetWidth * 2 || h > targetHeight * 2) {
+            w = (w > targetWidth * 2) ? w / 2 : targetWidth;
+            h = (h > targetHeight * 2) ? h / 2 : targetHeight;
+            
+            java.awt.image.BufferedImage temp = new java.awt.image.BufferedImage(w, h, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+            g2 = temp.createGraphics();
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2.drawImage(scratch, 0, 0, w, h, null);
+            g2.dispose();
+            scratch = temp;
+        }
+        
+        // Renderizado final con ajuste Bicúbico y Antialiasing para máxima fidelidad
+        java.awt.image.BufferedImage imgFinal = new java.awt.image.BufferedImage(targetWidth, targetHeight, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        g2 = imgFinal.createGraphics();
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.drawImage(scratch, 0, 0, targetWidth, targetHeight, null);
+        g2.dispose();
+        
+        return imgFinal;
     }
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents

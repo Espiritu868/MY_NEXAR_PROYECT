@@ -11,6 +11,7 @@ public class MenuPrincipal extends JFrame {
     private JButton btnAdministracion;
     private JButton btnInventario;
     private JButton btnClientes;
+    private JButton btnPuntoVenta;
     private JButton btnCerrarSesion;
     private JButton btnNuevoRol;
 
@@ -58,17 +59,22 @@ public class MenuPrincipal extends JFrame {
         // 3. Instanciar y estilizar los botones
         btnAdministracion = crearBotonUI("Administración", COLOR_BLANCO, COLOR_FONDO_NEGRO);
         btnClientes = crearBotonUI("Clientes", COLOR_BLANCO, COLOR_FONDO_NEGRO);
-        btnInventario = crearBotonUI("Inventario", COLOR_BLANCO, COLOR_FONDO_NEGRO); // <- AGREGAR ESTA LÍNEA
+        btnInventario = crearBotonUI("Inventario", COLOR_BLANCO, COLOR_FONDO_NEGRO);
+        btnPuntoVenta = crearBotonUI("Punto de Venta", COLOR_BLANCO, COLOR_FONDO_NEGRO);
         btnCerrarSesion = crearBotonUI("Cerrar Sesión", COLOR_BLANCO, COLOR_ROJO);
 
-        // 4. Agregar componentes al panel lateral
+       // 4. Agregar componentes al panel lateral
         panelLateralIzquierdo.add(lblMenu);
         panelLateralIzquierdo.add(Box.createVerticalStrut(30)); 
         panelLateralIzquierdo.add(btnAdministracion);
-        panelLateralIzquierdo.add(Box.createVerticalStrut(15)); // Espacio entre botones
+        panelLateralIzquierdo.add(Box.createVerticalStrut(15)); 
         panelLateralIzquierdo.add(btnClientes);
-        panelLateralIzquierdo.add(Box.createVerticalStrut(15)); // Espacio entre botones
+        panelLateralIzquierdo.add(Box.createVerticalStrut(15)); 
         panelLateralIzquierdo.add(btnInventario);     
+        panelLateralIzquierdo.add(Box.createVerticalStrut(15)); 
+        panelLateralIzquierdo.add(btnPuntoVenta);
+        // --------------------------------
+        
         panelLateralIzquierdo.add(Box.createVerticalGlue());     
         panelLateralIzquierdo.add(btnCerrarSesion);
         
@@ -96,11 +102,13 @@ public class MenuPrincipal extends JFrame {
             mostrarPanelHijo(new PanelGestionClientes());
         });
         
-        // --- AGREGAR ESTE BLOQUE ---
         btnInventario.addActionListener(e -> {
             mostrarPanelHijo(new PanelInventario());
         });
-        // ---------------------------
+       
+        btnPuntoVenta.addActionListener(e -> {
+            mostrarPanelHijo(new PanelPuntoVenta());
+        });
         
         btnCerrarSesion.addActionListener(e -> {
             System.exit(0);

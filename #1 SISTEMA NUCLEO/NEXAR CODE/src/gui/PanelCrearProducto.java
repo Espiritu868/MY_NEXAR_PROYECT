@@ -480,7 +480,7 @@ public class PanelCrearProducto extends JPanel {
         if (codigoStr.isEmpty()) { restaurarEstiloCodigo(); btnGuardar.setEnabled(true); return; }
         if (codigosEnRam.contains(codigoStr)) {
             txtCodigoBarras.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(220, 53, 69), 2), BorderFactory.createEmptyBorder(4, 7, 4, 7)));
-            lblErrorCodigo.setText("⚠ Este código ya está registrado en el inventario."); btnGuardar.setEnabled(false); 
+            lblErrorCodigo.setText("Este código ya está registrado en el inventario."); btnGuardar.setEnabled(false); 
         } else { restaurarEstiloCodigo(); btnGuardar.setEnabled(true); }
     }
 

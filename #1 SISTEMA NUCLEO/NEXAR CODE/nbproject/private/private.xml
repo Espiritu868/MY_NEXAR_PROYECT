@@ -16,6 +16,18 @@
             <file>file:/C:/%23NEXAR/%231%20SISTEMA%20NUCLEO/NEXAR%20CODE/src/dao/ClienteDAO.java</file>
             <file>file:/C:/%23NEXAR/%231%20SISTEMA%20NUCLEO/NEXAR%20CODE/src/gui/PanelConfiguracionImpresion.java</file>
             <file>file:/C:/%23NEXAR/%231%20SISTEMA%20NUCLEO/NEXAR%20CODE/src/utilidades/GeneradorTickets.java</file>
+            <file>file:/C:/%23NEXAR/%231%20SISTEMA%20NUCLEO/NEXAR%20CODE/src/gui/PanelCrearProducto.java</file>
+            <file>file:/C:/%23NEXAR/%231%20SISTEMA%20NUCLEO/NEXAR%20CODE/src/gui/PanelBuscarProducto.java</file>
+            <file>file:/C:/%23NEXAR/%231%20SISTEMA%20NUCLEO/NEXAR%20CODE/src/gui/PanelInventario.java</file>
+            <file>file:/C:/%23NEXAR/%231%20SISTEMA%20NUCLEO/NEXAR%20CODE/src/modelo/Producto.java</file>
+            <file>file:/C:/%23NEXAR/%231%20SISTEMA%20NUCLEO/NEXAR%20CODE/src/dao/InventarioDAO.java</file>
+            <file>file:/C:/%23NEXAR/%231%20SISTEMA%20NUCLEO/NEXAR%20CODE/src/dao/CatalogosDAO.java</file>
+            <file>file:/C:/%23NEXAR/%231%20SISTEMA%20NUCLEO/NEXAR%20CODE/src/gui/DialogoKardex.java</file>
+            <file>file:/C:/%23NEXAR/%231%20SISTEMA%20NUCLEO/NEXAR%20CODE/src/dao/KardexDAO.java</file>
+            <file>file:/C:/%23NEXAR/%231%20SISTEMA%20NUCLEO/NEXAR%20CODE/src/gui/DialogoMovimientoKardex.java</file>
+            <file>file:/C:/%23NEXAR/%231%20SISTEMA%20NUCLEO/NEXAR%20CODE/src/gui/PanelPuntoVenta.java</file>
+            <file>file:/C:/%23NEXAR/%231%20SISTEMA%20NUCLEO/NEXAR%20CODE/src/utilidades/SesionGlobal.java</file>
+            <file>file:/C:/%23NEXAR/%231%20SISTEMA%20NUCLEO/NEXAR%20CODE/src/dao/VentasDAO.java</file>
         </group>
     </open-files>
 </project-private>
