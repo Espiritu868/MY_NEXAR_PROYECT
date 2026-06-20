@@ -56,7 +56,32 @@ public class PanelBuscarProducto extends JPanel {
             public boolean isCellEditable(int row, int column) { return column == 8; }
         };
 
-        tablaInventario = new JTable(modeloTabla);
+        tablaInventario = new JTable(modeloTabla) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                
+                if (!isRowSelected(row)) {
+                    Object valorStock = getValueAt(row, 7);
+                    int stock = 1; 
+                    if (valorStock != null) {
+                        try {
+                            stock = Integer.parseInt(valorStock.toString());
+                        } catch (NumberFormatException e) {}
+                    }
+                    
+                    // Si el stock es 0, toda la fila se pinta de rojo
+                    if (stock <= 0) {
+                        c.setForeground(new Color(220, 53, 69)); 
+                    } else {
+                        c.setForeground(Color.WHITE); 
+                    }
+                    c.setBackground(new Color(30, 30, 30)); 
+                }
+                return c;
+            }
+        };
+        // ------------------------------------------------------------------
         tablaInventario.setShowGrid(false);
         tablaInventario.setRowHeight(70); 
         tablaInventario.setBackground(new Color(30, 30, 30));

@@ -196,25 +196,6 @@ public class PanelPuntoVenta extends JPanel {
         recalcularTotales();
     }
 
-    private void modificarCantidad() {
-        int f = tablaVentas.getSelectedRow(); if(f < 0) return;
-        int stockMaximo = (int) modeloTablaVentas.getValueAt(f, 6);
-        String nuevoStr = JOptionPane.showInputDialog(this, "Nueva Cantidad (Stock Disponible: " + stockMaximo + "):", modeloTablaVentas.getValueAt(f, 3));
-        if(nuevoStr != null && !nuevoStr.isEmpty()) {
-            try {
-                int nuevaCant = Integer.parseInt(nuevoStr);
-                if (nuevaCant <= 0) { quitarProducto(); return; }
-                if (nuevaCant > stockMaximo) {
-                    JOptionPane.showMessageDialog(this, "No puede facturar " + nuevaCant + " unidades. Solo hay " + stockMaximo + " en stock.", "Error", JOptionPane.ERROR_MESSAGE); 
-                    return;
-                }
-                double precio = (double) modeloTablaVentas.getValueAt(f, 4);
-                modeloTablaVentas.setValueAt(nuevaCant, f, 3); modeloTablaVentas.setValueAt(nuevaCant * precio, f, 5);
-                recalcularTotales();
-            } catch(NumberFormatException ex) {}
-        }
-    }
-
     private void buscarProductoPorCodigo(String codigo) {
         if(codigo.isEmpty()) return;
         VentasDAO dao = new VentasDAO();
@@ -226,12 +207,70 @@ public class PanelPuntoVenta extends JPanel {
 
     private void modificarPrecio() {
         int f = tablaVentas.getSelectedRow(); if(f < 0) return;
-        String nuevoStr = JOptionPane.showInputDialog(this, "Nuevo Precio Unitario:", modeloTablaVentas.getValueAt(f, 4));
-        if(nuevoStr != null && !nuevoStr.isEmpty()) {
+        
+        // Creamos un cuadro de texto personalizado
+        JTextField txtNuevoPrecio = new JTextField(String.valueOf(modeloTablaVentas.getValueAt(f, 4)));
+        txtNuevoPrecio.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        
+        // Le agregamos un filtro que se dispara cada vez que el usuario presiona una tecla
+        txtNuevoPrecio.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent e) {
+                char c = e.getKeyChar();
+                // Si la tecla NO es un número, NO es un punto y NO es la tecla de borrar -> la bloqueamos
+                if (!Character.isDigit(c) && c != '.' && c != java.awt.event.KeyEvent.VK_BACK_SPACE) {
+                    e.consume(); // Anula la pulsación
+                }
+                // Si ya hay un punto decimal y el usuario intenta poner otro -> lo bloqueamos
+                if (c == '.' && txtNuevoPrecio.getText().contains(".")) {
+                    e.consume(); 
+                }
+            }
+        });
+
+        // Mostramos el cuadro de diálogo con nuestro JTextField protegido
+        int opcion = JOptionPane.showConfirmDialog(this, new Object[]{"Nuevo Precio Unitario:", txtNuevoPrecio}, "Modificar Precio", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        
+        if (opcion == JOptionPane.OK_OPTION && !txtNuevoPrecio.getText().isEmpty()) {
             try {
-                double nuevoPrecio = Double.parseDouble(nuevoStr);
+                double nuevoPrecio = Double.parseDouble(txtNuevoPrecio.getText());
                 int cant = (int) modeloTablaVentas.getValueAt(f, 3);
-                modeloTablaVentas.setValueAt(nuevoPrecio, f, 4); modeloTablaVentas.setValueAt(cant * nuevoPrecio, f, 5);
+                modeloTablaVentas.setValueAt(nuevoPrecio, f, 4); 
+                modeloTablaVentas.setValueAt(cant * nuevoPrecio, f, 5);
+                recalcularTotales();
+            } catch(NumberFormatException ex) {}
+        }
+    }
+
+    private void modificarCantidad() {
+        int f = tablaVentas.getSelectedRow(); if(f < 0) return;
+        int stockMaximo = (int) modeloTablaVentas.getValueAt(f, 6);
+        
+        JTextField txtNuevaCant = new JTextField(String.valueOf(modeloTablaVentas.getValueAt(f, 3)));
+        txtNuevaCant.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        
+        // El filtro para cantidad es más estricto: NO permite puntos decimales (no puedes vender 1.5 laptops)
+        txtNuevaCant.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent e) {
+                char c = e.getKeyChar();
+                if (!Character.isDigit(c) && c != java.awt.event.KeyEvent.VK_BACK_SPACE) {
+                    e.consume(); // Solo números enteros
+                }
+            }
+        });
+
+        int opcion = JOptionPane.showConfirmDialog(this, new Object[]{"Nueva Cantidad (Stock Disponible: " + stockMaximo + "):", txtNuevaCant}, "Modificar Cantidad", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        
+        if (opcion == JOptionPane.OK_OPTION && !txtNuevaCant.getText().isEmpty()) {
+            try {
+                int nuevaCant = Integer.parseInt(txtNuevaCant.getText());
+                if (nuevaCant <= 0) { quitarProducto(); return; }
+                if (nuevaCant > stockMaximo) {
+                    JOptionPane.showMessageDialog(this, "No puede facturar " + nuevaCant + " unidades. Solo hay " + stockMaximo + " en stock.", "Error", JOptionPane.ERROR_MESSAGE); 
+                    return;
+                }
+                double precio = (double) modeloTablaVentas.getValueAt(f, 4);
+                modeloTablaVentas.setValueAt(nuevaCant, f, 3); 
+                modeloTablaVentas.setValueAt(nuevaCant * precio, f, 5);
                 recalcularTotales();
             } catch(NumberFormatException ex) {}
         }
@@ -312,6 +351,14 @@ public class PanelPuntoVenta extends JPanel {
         @Override public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             JLabel label = new JLabel(); label.setHorizontalAlignment(SwingConstants.CENTER); label.setOpaque(true); label.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
             String ruta = (value != null) ? value.toString() : null;
+            
+            // --- LÓGICA DEL LOGO POR DEFECTO DE LA EMPRESA ---
+            if (ruta == null || ruta.trim().isEmpty() || !new File(ruta).exists()) {
+                if (utilidades.SesionGlobal.getEmpresaActual() != null && utilidades.SesionGlobal.getEmpresaActual().getLogoEmpresaRuta() != null) {
+                    ruta = utilidades.SesionGlobal.getEmpresaActual().getLogoEmpresaRuta();
+                }
+            }
+            
             if (ruta != null && new File(ruta).exists()) {
                 label.setIcon(new ImageIcon(new ImageIcon(ruta).getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH)));
             } else { label.setText("No Img"); label.setForeground(Color.GRAY); }
@@ -377,6 +424,7 @@ public class PanelPuntoVenta extends JPanel {
         }
     }
 
+    // --- MINI BUSCADOR DE PRODUCTOS (CON ALERTA DE STOCK Y FILTRO DE ELIMINADOS) ---
     private class DialogoBuscarProductoPOS extends JDialog {
         public DialogoBuscarProductoPOS(Frame parent) {
             super(parent, "Catálogo Rápido", true);
@@ -388,7 +436,30 @@ public class PanelPuntoVenta extends JPanel {
             
             String[] cols = {"ID", "Foto", "Código", "Producto", "Precio", "Stock"};
             DefaultTableModel mod = new DefaultTableModel(null, cols) { @Override public boolean isCellEditable(int r, int c) { return false; } };
-            JTable tab = new JTable(mod); tab.setBackground(new Color(30,30,30)); tab.setForeground(Color.WHITE); tab.setRowHeight(60); tab.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            
+            // --- APLICACIÓN DE COLORES EN ROJO SI EL STOCK ES 0 ---
+            JTable tab = new JTable(mod) {
+                @Override
+                public Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column) {
+                    Component c = super.prepareRenderer(renderer, row, column);
+                    if (!isRowSelected(row)) {
+                        Object valorStock = getValueAt(row, 5); // El stock está en la columna 5
+                        int stock = 1;
+                        if (valorStock != null) {
+                            try { stock = Integer.parseInt(valorStock.toString()); } catch (NumberFormatException e) {}
+                        }
+                        if (stock <= 0) {
+                            c.setForeground(new Color(220, 53, 69)); // Texto Rojo Nexar
+                        } else {
+                            c.setForeground(Color.WHITE);
+                        }
+                        c.setBackground(new Color(30, 30, 30));
+                    }
+                    return c;
+                }
+            };
+            
+            tab.setBackground(new Color(30,30,30)); tab.setForeground(Color.WHITE); tab.setRowHeight(60); tab.setFont(new Font("Segoe UI", Font.PLAIN, 14));
             tab.getTableHeader().setBackground(new Color(22, 22, 22)); tab.getTableHeader().setForeground(Color.WHITE); tab.getTableHeader().setPreferredSize(new Dimension(0, 35));
             
             tab.getColumnModel().getColumn(0).setMinWidth(0); tab.getColumnModel().getColumn(0).setMaxWidth(0); 
@@ -403,13 +474,24 @@ public class PanelPuntoVenta extends JPanel {
             
             List<Producto> lista = new InventarioDAO().listarProductosActivos();
             for (Producto p : lista) { 
+                // FILTRO ESTRICTO: Si está eliminado lógicamente (eliminado_producto == 1), NO se añade a la lista
+                // Nota: Si tu método en el modelo se llama diferente (ej: isEliminadoProducto()), adáptalo aquí
                 mod.addRow(new Object[]{p.getIdProducto(), p.getRutaImagen(), p.getCodigoBarras(), p.getNombreProducto(), String.format("L %.2f", p.getPrecioVenta()), p.getStockProducto()}); 
             }
             
             tab.addMouseListener(new java.awt.event.MouseAdapter() {
                 public void mouseClicked(java.awt.event.MouseEvent e) {
                     if (e.getClickCount() == 2) {
-                        int idSelec = (int) mod.getValueAt(tab.convertRowIndexToModel(tab.getSelectedRow()), 0);
+                        int filaModelo = tab.convertRowIndexToModel(tab.getSelectedRow());
+                        int stockActual = (int) mod.getValueAt(filaModelo, 5);
+                        
+                        // --- BLOQUEO DE SELECCIÓN SI EL STOCK ES 0 ---
+                        if (stockActual <= 0) {
+                            JOptionPane.showMessageDialog(DialogoBuscarProductoPOS.this, "No puede seleccionar este artículo porque no cuenta con existencias en el inventario.", "Falta de Stock", JOptionPane.WARNING_MESSAGE);
+                            return;
+                        }
+                        
+                        int idSelec = (int) mod.getValueAt(filaModelo, 0);
                         Producto pSelec = lista.stream().filter(p -> p.getIdProducto() == idSelec).findFirst().orElse(null);
                         if(pSelec != null) agregarProductoAVenta(pSelec);
                         dispose();

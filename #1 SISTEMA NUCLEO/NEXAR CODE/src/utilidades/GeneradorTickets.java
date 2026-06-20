@@ -22,6 +22,7 @@ public class GeneradorTickets {
 
     /**
      * Construye la vista previa del ticket para la interfaz gráfica.
+     * Ahora estructurado exactamente igual que el PDF generado.
      */
     public static JPanel crearTicketVistaPrevia(String tituloDocumento, JTextArea txtAreaEditable) {
         JPanel panelCentrador = new JPanel(new GridBagLayout());
@@ -30,42 +31,91 @@ public class GeneradorTickets {
         JPanel pnlTicket = new JPanel();
         pnlTicket.setLayout(new BoxLayout(pnlTicket, BoxLayout.Y_AXIS));
         pnlTicket.setBackground(Color.WHITE);
-        pnlTicket.setPreferredSize(new Dimension(280, 450));
-        pnlTicket.setMinimumSize(new Dimension(280, 450));
-        pnlTicket.setMaximumSize(new Dimension(280, 450));
+        // Aumentamos el tamaño para que quepa toda la nueva cabecera
+        pnlTicket.setPreferredSize(new Dimension(300, 600));
+        pnlTicket.setMinimumSize(new Dimension(300, 600));
+        pnlTicket.setMaximumSize(new Dimension(300, 600));
 
         pnlTicket.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
             BorderFactory.createEmptyBorder(20, 15, 20, 15)
         ));
 
-        Font fBold = new Font("Courier New", Font.BOLD, 14);
+        Font fBold = new Font("Courier New", Font.BOLD, 13);
         Font fNormal = new Font("Courier New", Font.PLAIN, 12);
+        Font fTitulo = new Font("Courier New", Font.BOLD, 16);
 
-        Empresa emp = SesionGlobal.getEmpresaActual();
+        modelo.Empresa emp = SesionGlobal.getEmpresaActual();
+        
+        // --- 1. EXTRACCIÓN EXACTA COMO EN EL PDF ---
         String empNombre = emp != null && emp.getNombreEmpresa() != null ? emp.getNombreEmpresa().toUpperCase() : "NEXAR STORE";
+        String empDueño = emp != null && emp.getDuenoEmpresa() != null ? "Prop: " + emp.getDuenoEmpresa() : "";
         String empRtn = emp != null && emp.getRtnEmpresa() != null ? "RTN: " + emp.getRtnEmpresa() : "RTN: PENDIENTE";
         
-        pnlTicket.add(crearLabelCentrado(empNombre, fBold, Color.BLACK));
-        pnlTicket.add(crearLabelCentrado(empRtn, fNormal, Color.BLACK));
+        pnlTicket.add(crearLabelCentrado(empNombre, fTitulo, Color.BLACK));
         pnlTicket.add(Box.createVerticalStrut(5));
-        pnlTicket.add(crearLabelCentrado(tituloDocumento, fNormal, Color.DARK_GRAY));
-        pnlTicket.add(Box.createVerticalStrut(10));
-        pnlTicket.add(crearLabelCentrado("===============================", fNormal, Color.BLACK));
         
+        if (!empDueño.isEmpty()) pnlTicket.add(crearLabelCentrado(empDueño, fBold, Color.DARK_GRAY));
+        pnlTicket.add(crearLabelCentrado(empRtn, fBold, Color.DARK_GRAY));
         pnlTicket.add(Box.createVerticalStrut(10));
-        pnlTicket.add(crearLabelCentrado("CANT  DESCRIPCION       TOTAL", fNormal, Color.BLACK));
-        pnlTicket.add(crearLabelCentrado("-------------------------------", fNormal, Color.BLACK));
-        pnlTicket.add(crearLabelCentrado(" 1x   Reemplazo LCD    L 1500", fNormal, Color.BLACK));
-        pnlTicket.add(crearLabelCentrado("-------------------------------", fNormal, Color.BLACK));
-        pnlTicket.add(crearLabelCentrado("TOTAL:                 L 1500", fBold, Color.BLACK));
-        pnlTicket.add(Box.createVerticalStrut(20));
 
+        // --- 2. DIBUJO DE ÍCONOS VECTORIALES CON JAVA 2D ---
+        if (emp != null) {
+            if (emp.getDireccionEmpresa() != null && !emp.getDireccionEmpresa().isEmpty()) 
+                pnlTicket.add(crearLabelConIcono("dir", emp.getDireccionEmpresa(), fNormal, Color.BLACK));
+            if (emp.getNumeroTelefono() != null && !emp.getNumeroTelefono().isEmpty()) 
+                pnlTicket.add(crearLabelConIcono("tel", emp.getNumeroTelefono(), fNormal, Color.BLACK));
+            if (emp.getTelefonoSecundario() != null && !emp.getTelefonoSecundario().isEmpty()) 
+                pnlTicket.add(crearLabelConIcono("tel", emp.getTelefonoSecundario(), fNormal, Color.BLACK));
+            if (emp.getWhatsapp() != null && !emp.getWhatsapp().isEmpty()) 
+                pnlTicket.add(crearLabelConIcono("wa", emp.getWhatsapp(), fNormal, Color.BLACK));
+            if (emp.getFacebook() != null && !emp.getFacebook().isEmpty()) 
+                pnlTicket.add(crearLabelConIcono("fb", emp.getFacebook(), fNormal, Color.BLACK));
+            if (emp.getEmail() != null && !emp.getEmail().isEmpty()) 
+                pnlTicket.add(crearLabelConIcono("mail", emp.getEmail(), fNormal, Color.BLACK));
+            if (emp.getWeb() != null && !emp.getWeb().isEmpty()) 
+                pnlTicket.add(crearLabelConIcono("web", emp.getWeb(), fNormal, Color.BLACK));
+        }
+        
+        // --- 3. DATOS FICTICIOS PARA LA VISTA PREVIA ---
+        pnlTicket.add(crearLabelCentrado("Cliente: CONSUMIDOR FINAL", fNormal, Color.BLACK));
+        pnlTicket.add(crearLabelCentrado("Fecha: 01/01/2026 12:00", fNormal, Color.BLACK));
+        pnlTicket.add(crearLabelCentrado("-------------------------------", fNormal, Color.BLACK));
+        pnlTicket.add(crearLabelCentrado("C. DESCRIPCION       TOTAL", fNormal, Color.BLACK));
+        pnlTicket.add(crearLabelCentrado("-------------------------------", fNormal, Color.BLACK));
+        pnlTicket.add(crearLabelCentrado("1  Reemplazo LCD     1500.00", fNormal, Color.BLACK));
+        pnlTicket.add(crearLabelCentrado("1  Mantenimiento      500.00", fNormal, Color.BLACK));
+        pnlTicket.add(crearLabelCentrado("-------------------------------", fNormal, Color.BLACK));
+        
+        JPanel pnlTotales = new JPanel(new GridLayout(3, 1));
+        pnlTotales.setOpaque(false);
+        pnlTotales.add(crearLabelAlineadoDer("SUBTOTAL: L  1739.13", fBold));
+        pnlTotales.add(crearLabelAlineadoDer("I.S.V (15%): L   260.87", fBold));
+        pnlTotales.add(crearLabelAlineadoDer("TOTAL A PAGAR: L  2000.00", fBold));
+        
+        pnlTotales.setMaximumSize(new Dimension(250, 60));
+        pnlTicket.add(pnlTotales);
+        
         pnlTicket.add(crearLabelCentrado("===============================", fNormal, Color.BLACK));
+        pnlTicket.add(Box.createVerticalStrut(10));
+
+        // --- 4. PIE DE PÁGINA DINÁMICO (Editable por el usuario) ---
+        txtAreaEditable.setAlignmentX(Component.CENTER_ALIGNMENT);
         pnlTicket.add(txtAreaEditable);
 
         panelCentrador.add(pnlTicket);
         return panelCentrador;
+    }
+
+    /**
+     * Helper para alinear los totales a la derecha simulando el PDF
+     */
+    private static JLabel crearLabelAlineadoDer(String texto, Font fuente) {
+        JLabel lbl = new JLabel(texto, SwingConstants.RIGHT);
+        lbl.setFont(fuente);
+        lbl.setForeground(Color.BLACK);
+        lbl.setAlignmentX(Component.CENTER_ALIGNMENT);
+        return lbl;
     }
 
     public static JLabel crearLabelCentrado(String texto, Font fuente, Color color) {
@@ -261,5 +311,66 @@ public class GeneradorTickets {
                 break;
         }
         return Image.getInstance(tp);
+    }
+    
+    // ==============================================================================
+    // DIBUJO DE ÍCONOS VECTORIALES PARA LA VISTA PREVIA (INTERFAZ GRÁFICA)
+    // ==============================================================================
+    private static class IconoVectorialUI implements Icon {
+        private String tipo;
+        public IconoVectorialUI(String tipo) { this.tipo = tipo; }
+        @Override public int getIconWidth() { return 16; }
+        @Override public int getIconHeight() { return 16; }
+        @Override public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(Color.DARK_GRAY);
+            g2.setStroke(new BasicStroke(1.5f));
+            
+            switch (tipo) {
+                case "tel":
+                    g2.drawRoundRect(x + 4, y + 1, 8, 13, 4, 4);
+                    g2.drawLine(x + 6, y + 3, x + 10, y + 3);
+                    break;
+                case "wa":
+                    g2.drawOval(x + 2, y + 2, 11, 11);
+                    g2.drawLine(x + 3, y + 11, x + 1, y + 15);
+                    g2.drawLine(x + 1, y + 15, x + 5, y + 12);
+                    break;
+                case "fb":
+                    g2.fillRect(x + 2, y + 2, 12, 12);
+                    g2.setColor(Color.WHITE);
+                    g2.drawLine(x + 8, y + 14, x + 8, y + 4);
+                    g2.drawLine(x + 8, y + 4, x + 11, y + 4);
+                    g2.drawLine(x + 5, y + 8, x + 11, y + 8);
+                    break;
+                case "mail":
+                    g2.drawRect(x + 1, y + 4, 14, 9);
+                    g2.drawLine(x + 1, y + 4, x + 8, y + 9);
+                    g2.drawLine(x + 15, y + 4, x + 8, y + 9);
+                    break;
+                case "web":
+                    g2.drawOval(x + 2, y + 2, 12, 12);
+                    g2.drawLine(x + 2, y + 8, x + 14, y + 8);
+                    g2.drawLine(x + 8, y + 2, x + 8, y + 14);
+                    g2.drawOval(x + 5, y + 2, 6, 12);
+                    break;
+                case "dir":
+                    g2.drawOval(x + 4, y + 1, 8, 8);
+                    g2.drawLine(x + 5, y + 8, x + 8, y + 14);
+                    g2.drawLine(x + 11, y + 8, x + 8, y + 14);
+                    break;
+            }
+            g2.dispose();
+        }
+    }
+
+    public static JLabel crearLabelConIcono(String tipoIcono, String texto, Font fuente, Color color) {
+        JLabel lbl = new JLabel(" " + texto); 
+        lbl.setIcon(new IconoVectorialUI(tipoIcono));
+        lbl.setFont(fuente);
+        lbl.setForeground(color);
+        lbl.setAlignmentX(Component.CENTER_ALIGNMENT);
+        return lbl;
     }
 }
