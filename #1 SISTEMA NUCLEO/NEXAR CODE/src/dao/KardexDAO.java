@@ -114,8 +114,8 @@ public class KardexDAO {
 
     public java.util.List<Object[]> obtenerHistorialKardex(int idProducto) {
         java.util.List<Object[]> historial = new java.util.ArrayList<>();
-        // Consulta ajustada a los nombres exactos que me proporcionaste
-        String sql = "SELECT k.fecha_movimiento_producto, k.tipo_movimiento_producto, k.cantidad_producto, k.referencia_producto, u.nombre_usuario " +
+        
+        String sql = "SELECT k.fecha_movimiento_producto, k.tipo_movimiento_producto, k.cantidad_producto, k.stock_restante_producto, k.referencia_producto, u.nombre_usuario " +
                      "FROM KARDEX k INNER JOIN USUARIOS u ON k.id_usuario = u.id_usuario " +
                      "WHERE k.id_producto = ? ORDER BY k.fecha_movimiento_producto DESC";
                      
@@ -123,11 +123,13 @@ public class KardexDAO {
             ps.setInt(1, idProducto);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
+                    // Ahora el arreglo manda exactamente los 6 datos en el orden correcto
                     historial.add(new Object[]{
                         rs.getTimestamp("fecha_movimiento_producto"),
                         rs.getString("tipo_movimiento_producto"),
                         rs.getInt("cantidad_producto"),
-                        rs.getString("referencia_producto"), // Tu observación
+                        rs.getInt("stock_restante_producto"), // <-- EL DATO NUEVO
+                        rs.getString("referencia_producto"), 
                         rs.getString("nombre_usuario")
                     });
                 }

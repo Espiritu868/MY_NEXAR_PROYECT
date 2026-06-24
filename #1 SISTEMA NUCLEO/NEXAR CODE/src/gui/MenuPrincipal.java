@@ -12,6 +12,7 @@ public class MenuPrincipal extends JFrame {
     private JButton btnInventario;
     private JButton btnClientes;
     private JButton btnPuntoVenta;
+    private JButton btnGarantias;
     private JButton btnCerrarSesion;
     private JButton btnNuevoRol;
 
@@ -22,7 +23,7 @@ public class MenuPrincipal extends JFrame {
 
     public MenuPrincipal() {
         // 1. Configuración de la ventana principal
-        setTitle("NEXAR - CONEXION A TU ALCANCE");
+        setTitle("ORION SYSTEMS - CONEXION A TU ALCANCE");
         try {
             java.net.URL imgURL = getClass().getResource("/image/logo.png");
             if (imgURL != null) {
@@ -61,6 +62,7 @@ public class MenuPrincipal extends JFrame {
         btnClientes = crearBotonUI("Clientes", COLOR_BLANCO, COLOR_FONDO_NEGRO);
         btnInventario = crearBotonUI("Inventario", COLOR_BLANCO, COLOR_FONDO_NEGRO);
         btnPuntoVenta = crearBotonUI("Punto de Venta", COLOR_BLANCO, COLOR_FONDO_NEGRO);
+        btnGarantias = crearBotonUI("Garantías", COLOR_BLANCO, COLOR_FONDO_NEGRO); // <-- NUEVO
         btnCerrarSesion = crearBotonUI("Cerrar Sesión", COLOR_BLANCO, COLOR_ROJO);
 
        // 4. Agregar componentes al panel lateral
@@ -73,6 +75,8 @@ public class MenuPrincipal extends JFrame {
         panelLateralIzquierdo.add(btnInventario);     
         panelLateralIzquierdo.add(Box.createVerticalStrut(15)); 
         panelLateralIzquierdo.add(btnPuntoVenta);
+        panelLateralIzquierdo.add(Box.createVerticalStrut(15)); 
+        panelLateralIzquierdo.add(btnGarantias); // <-- BOTÓN AGREGADO AL MENÚ
         // --------------------------------
         
         panelLateralIzquierdo.add(Box.createVerticalGlue());     
@@ -83,7 +87,7 @@ public class MenuPrincipal extends JFrame {
         panelCentral.setLayout(new BorderLayout());
         panelCentral.setBackground(COLOR_FONDO_NEGRO); 
         
-        JLabel lblBienvenida = new JLabel("Bienvenido a Nexar", SwingConstants.CENTER);
+        JLabel lblBienvenida = new JLabel("Bienvenido a Orion Systems", SwingConstants.CENTER);
         lblBienvenida.setFont(new Font("Segoe UI", Font.BOLD, 32));
         lblBienvenida.setForeground(COLOR_BLANCO);
         panelCentral.add(lblBienvenida, BorderLayout.CENTER);
@@ -108,6 +112,10 @@ public class MenuPrincipal extends JFrame {
        
         btnPuntoVenta.addActionListener(e -> {
             mostrarPanelHijo(new PanelPuntoVenta());
+        });
+        
+        btnGarantias.addActionListener(e -> {
+            mostrarPanelHijo(new PanelGestionGarantias());
         });
         
         btnCerrarSesion.addActionListener(e -> {

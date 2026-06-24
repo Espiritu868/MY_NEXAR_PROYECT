@@ -14,6 +14,8 @@ public class Producto {
     private int stockProducto;
     private String rutaImagen;
     private boolean eliminado; // 0 = Activo, 1 = Eliminado (Soft Delete)
+    private int diasGarantia;
+    private boolean requiereSerie;
 
     public Producto() {}
 
@@ -56,4 +58,10 @@ public class Producto {
 
     public boolean isEliminado() { return eliminado; }
     public void setEliminado(boolean eliminado) { this.eliminado = eliminado; }
+    
+    public int getDiasGarantia() { return diasGarantia; }
+    public void setDiasGarantia(int diasGarantia) { this.diasGarantia = diasGarantia; }
+
+    public boolean isRequiereSerie() { return requiereSerie; }
+    public void setRequiereSerie(boolean requiereSerie) { this.requiereSerie = requiereSerie; }
 }

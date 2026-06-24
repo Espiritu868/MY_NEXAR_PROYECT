@@ -18,7 +18,10 @@ public class PanelConfiguracionImpresion extends JPanel {
     private JTextArea txtMensajeRecibo;
     private JTextArea txtMensajeEntrega;
     private JTextArea txtMensajeCotizacion;
-    private JTextField txtRutaLogo; 
+    private JTextArea txtMensajeGarantia; // <-- EL NUEVO CAMPO
+    private JTextField txtRutaLogo;
+    
+    
     
     private JPanel panelTarjetas;
 
@@ -57,6 +60,7 @@ public class PanelConfiguracionImpresion extends JPanel {
         txtMensajeRecibo = crearTextAreaEditable("Este es un comprobante de pago.");
         txtMensajeEntrega = crearTextAreaEditable("Revise su equipo antes de salir.");
         txtMensajeCotizacion = crearTextAreaEditable("Cotización válida por 15 días.");
+        txtMensajeGarantia = crearTextAreaEditable("Conserve este documento. La garantía no aplica por daños físicos, humedad, exposición a líquidos o manipulación por terceros.");
         txtRutaLogo = new JTextField(); 
 
         CardLayout cardLayout = new CardLayout();
@@ -68,6 +72,7 @@ public class PanelConfiguracionImpresion extends JPanel {
         panelTarjetas.add(utilidades.GeneradorTickets.crearTicketVistaPrevia("DOCUMENTO: RECIBO", txtMensajeRecibo), "Recibo");
         panelTarjetas.add(utilidades.GeneradorTickets.crearTicketVistaPrevia("DOCUMENTO: ENTREGA", txtMensajeEntrega), "Entrega");
         panelTarjetas.add(utilidades.GeneradorTickets.crearTicketVistaPrevia("DOCUMENTO: COTIZACIÓN", txtMensajeCotizacion), "Cotizacion");
+        panelTarjetas.add(utilidades.GeneradorTickets.crearTicketVistaPrevia("POLÍTICAS DE GARANTÍA", txtMensajeGarantia), "Garantia");
 
         // --- PANEL INFERIOR (Botones de Control) ---
         JPanel panelBotonesControl = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 15));
@@ -77,14 +82,16 @@ public class PanelConfiguracionImpresion extends JPanel {
         JButton btnRecibo = crearBotonEstiloPestana("Recibo");
         JButton btnEntrega = crearBotonEstiloPestana("Entrega");
         JButton btnCotizacion = crearBotonEstiloPestana("Cotización");
+        JButton btnGarantia = crearBotonEstiloPestana("Garantías"); // <-- BOTÓN NUEVO
 
         btnFactura.addActionListener(e -> cardLayout.show(panelTarjetas, "Factura"));
         btnRecibo.addActionListener(e -> cardLayout.show(panelTarjetas, "Recibo"));
         btnEntrega.addActionListener(e -> cardLayout.show(panelTarjetas, "Entrega"));
         btnCotizacion.addActionListener(e -> cardLayout.show(panelTarjetas, "Cotizacion"));
+        btnGarantia.addActionListener(e -> cardLayout.show(panelTarjetas, "Garantia")); // <-- EVENTO NUEVO
 
         JButton btnLogo = crearBotonEstiloPestana("Cargar Logo");
-        btnLogo.setBackground(new Color(25, 135, 84)); // Verde para destacar
+        btnLogo.setBackground(new Color(25, 135, 84)); 
         btnLogo.addActionListener(e -> cargarLogoDesdePC());
 
         // Separador visual
@@ -100,10 +107,11 @@ public class PanelConfiguracionImpresion extends JPanel {
         panelBotonesControl.add(btnRecibo);
         panelBotonesControl.add(btnEntrega);
         panelBotonesControl.add(btnCotizacion);
+        panelBotonesControl.add(btnGarantia); // <-- AGREGADO AL PANEL
         panelBotonesControl.add(btnLogo);
         panelBotonesControl.add(lblSeparador);
         panelBotonesControl.add(btnImpresoras);
-
+        
         this.add(panelTarjetas, BorderLayout.CENTER);
         this.add(panelBotonesControl, BorderLayout.SOUTH);
     }
@@ -119,6 +127,10 @@ public class PanelConfiguracionImpresion extends JPanel {
             if (emp.getMensajeTicketPieRecibo() != null) txtMensajeRecibo.setText(emp.getMensajeTicketPieRecibo());
             if (emp.getMensajeTicketEntrega() != null) txtMensajeEntrega.setText(emp.getMensajeTicketEntrega());
             if (emp.getMensajeTicketPieCotizacion() != null) txtMensajeCotizacion.setText(emp.getMensajeTicketPieCotizacion());
+            
+            // --- NUEVO ---
+            if (emp.getPoliticasGarantia() != null) txtMensajeGarantia.setText(emp.getPoliticasGarantia());
+            
             if (emp.getLogoEmpresaRuta() != null) txtRutaLogo.setText(emp.getLogoEmpresaRuta());
         }
     }
@@ -130,11 +142,13 @@ public class PanelConfiguracionImpresion extends JPanel {
             return;
         }
 
-        // Actualizamos los campos en el objeto
+       // Actualizamos los campos en el objeto
         emp.setMensajeTicketPieFactura(txtMensajeFactura.getText().trim());
         emp.setMensajeTicketPieRecibo(txtMensajeRecibo.getText().trim());
         emp.setMensajeTicketEntrega(txtMensajeEntrega.getText().trim());
         emp.setMensajeTicketPieCotizacion(txtMensajeCotizacion.getText().trim());
+        emp.setPoliticasGarantia(txtMensajeGarantia.getText().trim());
+        
         emp.setLogoEmpresaRuta(txtRutaLogo.getText().trim());
 
         EmpresaDAO dao = new EmpresaDAO();
@@ -148,10 +162,37 @@ public class PanelConfiguracionImpresion extends JPanel {
     private void cargarLogoDesdePC() {
         JFileChooser chooser = new JFileChooser();
         chooser.setDialogTitle("Seleccionar Logo de la Empresa");
+        
         if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             File archivo = chooser.getSelectedFile();
-            txtRutaLogo.setText(archivo.getAbsolutePath());
-            JOptionPane.showMessageDialog(this, "Logo cargado exitosamente.\nRecuerde presionar 'Guardar Textos y Logo'.");
+            String ruta = archivo.getAbsolutePath();
+            txtRutaLogo.setText(ruta);
+            
+            Empresa emp = SesionGlobal.getEmpresaActual();
+            
+            if (emp != null) {
+                emp.setLogoEmpresaRuta(ruta);
+                
+                String sql = "UPDATE EMPRESA SET logo_empresa_ruta = ? WHERE id_empresa = ?";
+                
+                try (java.sql.Connection con = new factory.ConexionFactory().getConexion();
+                     java.sql.PreparedStatement ps = con.prepareStatement(sql)) {
+                     
+                    ps.setString(1, ruta);
+                    ps.setInt(2, emp.getIdEmpresa());
+                    ps.executeUpdate();
+                    
+                    JOptionPane.showMessageDialog(this, "Logo cargado y guardado en la base de datos exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                    
+                    // Recargamos la vista previa para que el nuevo logo aparezca en las tarjetas de inmediato
+                    recargarVistaPrevia();
+                    
+                } catch (java.sql.SQLException ex) {
+                    JOptionPane.showMessageDialog(this, "Error al guardar el logo en la base de datos:\n" + ex.getMessage(), "Error SQL", JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "No se encontró una empresa activa.\nPor favor, guarde primero los Datos Generales.", "Aviso", JOptionPane.WARNING_MESSAGE);
+            }
         }
     }
 
@@ -252,12 +293,11 @@ public class PanelConfiguracionImpresion extends JPanel {
     public void recargarVistaPrevia() {
         panelTarjetas.removeAll(); // Borramos los tickets viejos
         
-        // Volvemos a generar los tickets. Como SesionGlobal ya se actualizó, tomarán el nuevo nombre/RTN.
-        // Además, le volvemos a pasar nuestros txtMensaje para que no se borre lo que el usuario estaba escribiendo.
         panelTarjetas.add(utilidades.GeneradorTickets.crearTicketVistaPrevia("DOCUMENTO: FACTURA", txtMensajeFactura), "Factura");
         panelTarjetas.add(utilidades.GeneradorTickets.crearTicketVistaPrevia("DOCUMENTO: RECIBO", txtMensajeRecibo), "Recibo");
         panelTarjetas.add(utilidades.GeneradorTickets.crearTicketVistaPrevia("DOCUMENTO: ENTREGA", txtMensajeEntrega), "Entrega");
         panelTarjetas.add(utilidades.GeneradorTickets.crearTicketVistaPrevia("DOCUMENTO: COTIZACIÓN", txtMensajeCotizacion), "Cotizacion");
+        panelTarjetas.add(utilidades.GeneradorTickets.crearTicketVistaPrevia("POLÍTICAS DE GARANTÍA", txtMensajeGarantia), "Garantia");
         
         panelTarjetas.revalidate(); // Le decimos a Java que recalcule los tamaños
         panelTarjetas.repaint();    // Le decimos a Java que redibuje la pantalla

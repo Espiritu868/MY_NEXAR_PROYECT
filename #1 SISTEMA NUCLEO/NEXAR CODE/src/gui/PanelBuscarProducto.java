@@ -49,46 +49,38 @@ public class PanelBuscarProducto extends JPanel {
         panelSuperior.add(txtBusqueda, BorderLayout.EAST);
         this.add(panelSuperior, BorderLayout.NORTH);
 
-        // --- TABLA DE INVENTARIO ---
-        String[] columnas = {"ID", "Foto", "Código", "Producto", "P. Compra", "P. Venta", "P. Técnico", "Stock", "Acciones"};
+        // --- TABLA DE INVENTARIO (Sin columna de acciones) ---
+        String[] columnas = {"ID", "Foto", "Código", "Producto", "P. Compra", "P. Venta", "P. Técnico", "Stock"};
         modeloTabla = new DefaultTableModel(null, columnas) {
             @Override
-            public boolean isCellEditable(int row, int column) { return column == 8; }
+            public boolean isCellEditable(int row, int column) { return false; } // Nada es editable directamente
         };
 
+        // --- CREACIÓN DE LA TABLA CON FORMATO CONDICIONAL ROJO ---
         tablaInventario = new JTable(modeloTabla) {
             @Override
             public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
                 Component c = super.prepareRenderer(renderer, row, column);
-                
                 if (!isRowSelected(row)) {
                     Object valorStock = getValueAt(row, 7);
                     int stock = 1; 
                     if (valorStock != null) {
-                        try {
-                            stock = Integer.parseInt(valorStock.toString());
-                        } catch (NumberFormatException e) {}
+                        try { stock = Integer.parseInt(valorStock.toString()); } catch (NumberFormatException e) {}
                     }
-                    
-                    // Si el stock es 0, toda la fila se pinta de rojo
-                    if (stock <= 0) {
-                        c.setForeground(new Color(220, 53, 69)); 
-                    } else {
-                        c.setForeground(Color.WHITE); 
-                    }
+                    if (stock <= 0) c.setForeground(new Color(220, 53, 69)); 
+                    else c.setForeground(Color.WHITE); 
                     c.setBackground(new Color(30, 30, 30)); 
                 }
                 return c;
             }
         };
-        // ------------------------------------------------------------------
+
         tablaInventario.setShowGrid(false);
         tablaInventario.setRowHeight(70); 
         tablaInventario.setBackground(new Color(30, 30, 30));
         tablaInventario.setForeground(Color.WHITE);
         tablaInventario.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         tablaInventario.setSelectionBackground(new Color(50, 50, 50));
-
         tablaInventario.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
         tablaInventario.getTableHeader().setBackground(new Color(22, 22, 22));
         tablaInventario.getTableHeader().setForeground(new Color(180, 180, 180));
@@ -102,12 +94,9 @@ public class PanelBuscarProducto extends JPanel {
         tablaInventario.getColumnModel().getColumn(1).setMaxWidth(80);
         tablaInventario.getColumnModel().getColumn(1).setCellRenderer(new ImagenProductoRenderer());
 
-        tablaInventario.getColumnModel().getColumn(8).setPreferredWidth(100); 
-        tablaInventario.getColumnModel().getColumn(8).setMaxWidth(100);
-        tablaInventario.getColumnModel().getColumn(8).setCellRenderer(new PanelAccionesRenderer());
-        tablaInventario.getColumnModel().getColumn(8).setCellEditor(new PanelAccionesEditor());
-
         sorter = new TableRowSorter<>(modeloTabla);
+        sorter.setSortKeys(java.util.List.of(new RowSorter.SortKey(0, SortOrder.DESCENDING)));
+        
         tablaInventario.setRowSorter(sorter);
         txtBusqueda.getDocument().addDocumentListener(new DocumentListener() {
             @Override public void insertUpdate(DocumentEvent e) { filtrar(); }
@@ -120,17 +109,13 @@ public class PanelBuscarProducto extends JPanel {
             }
         });
 
-        // --- LÓGICA DE CURSORES Y CLICS EN TABLA ---
+       // --- LÓGICA DE CURSORES Y CLICS EN TABLA ---
         tablaInventario.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
             @Override
             public void mouseMoved(java.awt.event.MouseEvent e) {
                 int columna = tablaInventario.columnAtPoint(e.getPoint());
-                // El cursor de mano solo aparece si pasas sobre la Foto (1) o las Acciones (8)
-                if (columna == 1 || columna == 8) {
-                    tablaInventario.setCursor(new Cursor(Cursor.HAND_CURSOR));
-                } else {
-                    tablaInventario.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                }
+                if (columna == 1) tablaInventario.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                else tablaInventario.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
             }
         });
 
@@ -139,16 +124,27 @@ public class PanelBuscarProducto extends JPanel {
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 int fila = tablaInventario.rowAtPoint(e.getPoint());
                 int columna = tablaInventario.columnAtPoint(e.getPoint());
-                if (fila >= 0 && columna == 1) { // 1 es la columna Foto
-                    int filaModelo = tablaInventario.convertRowIndexToModel(fila);
-                    String rutaImagen = (String) modeloTabla.getValueAt(filaModelo, 1);
-                    
-                    if (rutaImagen == null || rutaImagen.isEmpty() || !new File(rutaImagen).exists()) {
-                        if (SesionGlobal.getEmpresaActual() != null && SesionGlobal.getEmpresaActual().getLogoEmpresaRuta() != null) {
-                            rutaImagen = SesionGlobal.getEmpresaActual().getLogoEmpresaRuta();
+                
+                if (fila >= 0) {
+                    // Selecciona automáticamente la fila al hacer clic (útil para el clic derecho)
+                    tablaInventario.setRowSelectionInterval(fila, fila);
+
+                    // 1. Lógica para hacer ZOOM a la foto (Clic Izquierdo en Columna 1)
+                    if (columna == 1 && SwingUtilities.isLeftMouseButton(e)) {
+                        int filaModelo = tablaInventario.convertRowIndexToModel(fila);
+                        String rutaImagen = (String) modeloTabla.getValueAt(filaModelo, 1);
+                        if (rutaImagen == null || rutaImagen.isEmpty() || !new File(rutaImagen).exists()) {
+                            if (SesionGlobal.getEmpresaActual() != null && SesionGlobal.getEmpresaActual().getLogoEmpresaRuta() != null) {
+                                rutaImagen = SesionGlobal.getEmpresaActual().getLogoEmpresaRuta();
+                            }
                         }
+                        mostrarZoomImagen(rutaImagen);
                     }
-                    mostrarZoomImagen(rutaImagen);
+                    
+                    // 2. Lógica del Menú Estilo Windows (Doble Clic Izquierdo O Clic Derecho)
+                    if ((SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 2) || SwingUtilities.isRightMouseButton(e)) {
+                        mostrarMenuOpciones(e.getComponent(), e.getX(), e.getY(), fila);
+                    }
                 }
             }
         });
@@ -180,7 +176,6 @@ public class PanelBuscarProducto extends JPanel {
                 pVenta,                  // 5: Precio Venta
                 pMayorista,              // 6: Precio Técnico/Mayorista
                 p.getStockProducto(),    // 7: Stock
-                ""                       // 8: Botones de Acción
             });
         }
     }
@@ -214,113 +209,6 @@ public class PanelBuscarProducto extends JPanel {
             }
             return label;
         }
-    }
-    
-    // =========================================================
-    // CLASES PARA BOTONES DE ACCIÓN (LÁPIZ Y BASURERO)
-    // =========================================================
-    
-    // 1. Dibujo de los iconos
-    private class IconoEditar implements Icon {
-        @Override public void paintIcon(Component c, Graphics g, int x, int y) {
-            Graphics2D g2 = (Graphics2D) g; g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(new Color(13, 110, 253)); g2.setStroke(new BasicStroke(2));
-            g2.drawLine(x + 12, y + 2, x + 16, y + 6); g2.drawLine(x + 16, y + 6, x + 6, y + 16); 
-            g2.drawLine(x + 12, y + 2, x + 2, y + 12); g2.drawLine(x + 2, y + 12, x + 2, y + 16); g2.drawLine(x + 2, y + 16, x + 6, y + 16); 
-        }
-        @Override public int getIconWidth() { return 18; } @Override public int getIconHeight() { return 18; }
-    }
-
-    private class IconoEliminar implements Icon {
-        @Override public void paintIcon(Component c, Graphics g, int x, int y) {
-            Graphics2D g2 = (Graphics2D) g; g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(new Color(220, 53, 69)); g2.setStroke(new BasicStroke(2));
-            g2.drawLine(x + 2, y + 4, x + 16, y + 4); g2.drawLine(x + 7, y + 2, x + 11, y + 2); 
-            g2.drawRect(x + 4, y + 4, 10, 12); g2.drawLine(x + 7, y + 7, x + 7, y + 13); g2.drawLine(x + 11, y + 7, x + 11, y + 13); 
-        }
-        @Override public int getIconWidth() { return 18; } @Override public int getIconHeight() { return 18; }
-    }
-
-    // 2. Contenedor de botones
-    private class PanelAcciones extends JPanel {
-        private JButton btnEditar, btnEliminar;
-        public PanelAcciones() {
-            setLayout(new FlowLayout(FlowLayout.CENTER, 8, 20)); // Margen superior para centrar verticalmente
-            setOpaque(true);
-            btnEditar = new JButton(new IconoEditar()); 
-            btnEditar.setContentAreaFilled(false); 
-            btnEditar.setBorder(null); 
-            btnEditar.setCursor(new Cursor(Cursor.HAND_CURSOR)); 
-            btnEditar.setToolTipText("Editar Producto");
-            btnEliminar = new JButton(new IconoEliminar()); 
-            btnEliminar.setContentAreaFilled(false); 
-            btnEliminar.setBorder(null); 
-            btnEliminar.setCursor(new Cursor(Cursor.HAND_CURSOR)); 
-            btnEliminar.setToolTipText("Eliminar Producto");
-            add(btnEditar); add(btnEliminar);
-        }
-        public JButton getBtnEditar() { return btnEditar; } public JButton getBtnEliminar() { return btnEliminar; }
-    }
-
-    private class PanelAccionesRenderer implements TableCellRenderer {
-        private PanelAcciones panel = new PanelAcciones();
-        @Override public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            panel.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
-            return panel;
-        }
-    }
-
-    private class PanelAccionesEditor extends AbstractCellEditor implements TableCellEditor {
-        private PanelAcciones panel = new PanelAcciones();
-        private int filaVista;
-
-        public PanelAccionesEditor() {
-            panel.getBtnEditar().addActionListener(e -> {
-                fireEditingStopped();
-                int filaModelo = tablaInventario.convertRowIndexToModel(filaVista);
-                int idProducto = (int) modeloTabla.getValueAt(filaModelo, 0); // Obtenemos el ID oculto
-                
-                // LA SOLUCIÓN: Usar PanelBuscarProducto.this en lugar de panel
-                PanelInventario parent = (PanelInventario) SwingUtilities.getAncestorOfClass(PanelInventario.class, PanelBuscarProducto.this);
-                
-                if(parent != null) {
-                    InventarioDAO dao = new InventarioDAO();
-                    Producto p = dao.obtenerProductoPorId(idProducto); // Traemos los datos frescos
-                    
-                    if (p != null) {
-                        parent.mostrarSubPanel(new PanelCrearProducto(p)); // Abrimos modo edición
-                    } else {
-                        JOptionPane.showMessageDialog(PanelBuscarProducto.this, "Error: No se encontraron los datos del producto en la base de datos.", "Error", JOptionPane.ERROR_MESSAGE);
-                    }
-                } else {
-                    // Agregamos este else para que NUNCA vuelva a fallar en silencio
-                    JOptionPane.showMessageDialog(PanelBuscarProducto.this, "Error de interfaz: No se encontró el contenedor principal.", "Error Crítico", JOptionPane.ERROR_MESSAGE);
-                }
-            });
-
-            panel.getBtnEliminar().addActionListener(e -> {
-                fireEditingStopped();
-                int filaModelo = tablaInventario.convertRowIndexToModel(filaVista);
-                int idProducto = (int) modeloTabla.getValueAt(filaModelo, 0);
-                String nombre = modeloTabla.getValueAt(filaModelo, 3).toString();
-                
-                int confirmacion = JOptionPane.showConfirmDialog(panel, "¿Está seguro de eliminar el producto:\n" + nombre + "?", "Confirmar Eliminación", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-                if (confirmacion == JOptionPane.YES_OPTION) {
-                    InventarioDAO dao = new InventarioDAO();
-                    if (dao.eliminarProductoLogico(idProducto)) {
-                        JOptionPane.showMessageDialog(panel, "Producto eliminado.");
-                        cargarDatosDesdeBD();
-                    }
-                }
-            });
-        }
-
-        @Override public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
-            filaVista = row;
-            panel.setBackground(table.getSelectionBackground());
-            return panel;
-        }
-        @Override public Object getCellEditorValue() { return null; }
     }
     
     private void mostrarZoomImagen(String ruta) {
@@ -395,6 +283,126 @@ public class PanelBuscarProducto extends JPanel {
         g2.dispose();
         
         return imgFinal;
+    }
+    
+    // =========================================================
+    // MENÚ CONTEXTUAL (ESTILO WINDOWS) Y ACCIONES
+    // =========================================================
+    private void mostrarMenuOpciones(Component componente, int x, int y, int filaVista) {
+        JPopupMenu menu = new JPopupMenu();
+        menu.setBackground(new Color(35, 35, 35));
+        menu.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 70), 1));
+
+        // Ahora inyectamos nuestros propios íconos dibujados en Java 2D
+        JMenuItem itemEditar = crearMenuItem("Ver / Editar Producto", new Color(13, 110, 253), new IconoOjo());
+        JMenuItem itemEliminar = crearMenuItem("Eliminar Producto", new Color(220, 53, 69), new IconoBasurero());
+
+        itemEditar.addActionListener(e -> editarProductoSeleccionado(filaVista));
+        itemEliminar.addActionListener(e -> eliminarProductoSeleccionado(filaVista));
+
+        menu.add(itemEditar);
+        menu.addSeparator(); 
+        menu.add(itemEliminar);
+        
+        menu.show(componente, x, y);
+    }
+
+    private JMenuItem crearMenuItem(String texto, Color colorHover, Icon icono) {
+        JMenuItem item = new JMenuItem(texto);
+        item.setIcon(icono); // Asignamos el ícono detallado
+        item.setIconTextGap(12); // Separación elegante entre el dibujo y el texto
+        item.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        item.setForeground(Color.WHITE);
+        item.setBackground(new Color(35, 35, 35));
+        item.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        item.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        item.setOpaque(true);
+        
+        item.addChangeListener(e -> {
+            if (item.isArmed()) item.setBackground(colorHover);
+            else item.setBackground(new Color(35, 35, 35));
+        });
+        return item;
+    }
+
+    private void editarProductoSeleccionado(int filaVista) {
+        int filaModelo = tablaInventario.convertRowIndexToModel(filaVista);
+        int idProducto = (int) modeloTabla.getValueAt(filaModelo, 0); 
+        
+        PanelInventario parent = (PanelInventario) SwingUtilities.getAncestorOfClass(PanelInventario.class, PanelBuscarProducto.this);
+        if(parent != null) {
+            InventarioDAO dao = new InventarioDAO();
+            Producto p = dao.obtenerProductoPorId(idProducto); 
+            if (p != null) parent.mostrarSubPanel(new PanelCrearProducto(p)); 
+            else JOptionPane.showMessageDialog(this, "Error: No se encontraron los datos.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void eliminarProductoSeleccionado(int filaVista) {
+        int filaModelo = tablaInventario.convertRowIndexToModel(filaVista);
+        int idProducto = (int) modeloTabla.getValueAt(filaModelo, 0);
+        String nombre = modeloTabla.getValueAt(filaModelo, 3).toString();
+        
+        int confirmacion = JOptionPane.showConfirmDialog(this, "¿Está seguro de eliminar el producto:\n" + nombre + "?", "Confirmar Eliminación", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (confirmacion == JOptionPane.YES_OPTION) {
+            InventarioDAO dao = new InventarioDAO();
+            if (dao.eliminarProductoLogico(idProducto)) {
+                JOptionPane.showMessageDialog(this, "Producto eliminado exitosamente.");
+                cargarDatosDesdeBD();
+            }
+        }
+    }
+    // =========================================================
+    // DIBUJOS VECTORIALES PARA EL MENÚ CONTEXTUAL
+    // =========================================================
+    private class IconoOjo implements Icon {
+        @Override public int getIconWidth() { return 20; }
+        @Override public int getIconHeight() { return 20; }
+        @Override public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(new Color(13, 110, 253)); // Azul 
+            g2.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+            // Forma de almendra (Curvas superior e inferior)
+            g2.draw(new java.awt.geom.QuadCurve2D.Double(x + 1, y + 10, x + 10, y + 2, x + 19, y + 10));
+            g2.draw(new java.awt.geom.QuadCurve2D.Double(x + 1, y + 10, x + 10, y + 18, x + 19, y + 10));
+            
+            // Iris (Círculo central)
+            g2.drawOval(x + 6, y + 6, 8, 8);
+            
+            // Pupila (Relleno) y un pequeño brillo (Blanco)
+            g2.fillOval(x + 8, y + 8, 4, 4);
+            g2.setColor(Color.WHITE);
+            g2.fillOval(x + 9, y + 9, 1, 1); // Detalle de brillo en el ojo
+            
+            g2.dispose();
+        }
+    }
+
+    private class IconoBasurero implements Icon {
+        @Override public int getIconWidth() { return 20; }
+        @Override public int getIconHeight() { return 20; }
+        @Override public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(new Color(220, 53, 69)); // Rojo
+            g2.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+            // Agarradera y Tapa
+            g2.drawRoundRect(x + 8, y + 2, 4, 3, 2, 2);
+            g2.drawLine(x + 4, y + 5, x + 16, y + 5);
+            
+            // Cuerpo del basurero (Con bordes suavemente redondeados)
+            g2.drawRoundRect(x + 5, y + 5, 10, 12, 3, 3);
+            
+            // Detalles internos (Líneas del basurero)
+            g2.setStroke(new BasicStroke(1.5f));
+            g2.drawLine(x + 8, y + 8, x + 8, y + 14);
+            g2.drawLine(x + 12, y + 8, x + 12, y + 14);
+            
+            g2.dispose();
+        }
     }
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents

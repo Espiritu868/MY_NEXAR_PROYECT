@@ -38,6 +38,10 @@ public class PanelCrearProducto extends JPanel {
     private String rutaImagenSeleccionada = null; 
     private JButton btnGuardar;
     
+    private JComboBox<String> cmbDiasGarantia;
+    private final int[] valoresGarantia = {0, 3, 7, 15, 30, 60, 90,365}; // Array interno para guardar en BD
+    private JCheckBox chkRequiereSerie;
+    
     private Producto productoAEditar = null;
     private JButton btnKardex;
     
@@ -119,8 +123,6 @@ public class PanelCrearProducto extends JPanel {
 
         txtStockInicial = new JTextField(10);
         txtStockMinimo = new JTextField("0", 10); 
-
-        // Ensamblaje 
         agregarFilaCorta(pnlForm, gbc, 0, "Código de Barras:", txtCodigoBarras);
         gbc.gridy = 1; gbc.gridx = 1; gbc.insets = new Insets(0, 10, 10, 10);
         pnlForm.add(lblErrorCodigo, gbc);
@@ -130,11 +132,22 @@ public class PanelCrearProducto extends JPanel {
         agregarFila(pnlForm, gbc, 3, "Categoría:", crearPanelCatalogo(cmbCategoria, "Categoría"));
         agregarFila(pnlForm, gbc, 4, "Proveedor:", crearPanelCatalogo(cmbProveedor, "Proveedor"));
         agregarFila(pnlForm, gbc, 5, "Ubicación:", crearPanelCatalogo(cmbUbicacion, "Ubicación"));
+
+        cmbDiasGarantia = new JComboBox<>(new String[]{"Sin garantía", "3 días", "7 días", "15 días", "30 días", "60 días", "90 días", "1 año"});
+        cmbDiasGarantia.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        agregarFilaCorta(pnlForm, gbc, 6, "Garantía (Días):", cmbDiasGarantia);
+
+        chkRequiereSerie = new JCheckBox("Solicitar Identificador al facturar");
+        chkRequiereSerie.setBackground(new Color(30, 30, 30));
+        chkRequiereSerie.setForeground(new Color(13, 110, 253)); // Azul
+        chkRequiereSerie.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        chkRequiereSerie.setFocusPainted(false);
+        gbc.gridy = 7; gbc.gridx = 1; gbc.weightx = 1.0; gbc.anchor = GridBagConstraints.WEST;
+        pnlForm.add(chkRequiereSerie, gbc);
+        agregarFilaCorta(pnlForm, gbc, 8, "Precio Compra (L):", txtPrecioCompra);
+        agregarFilaCorta(pnlForm, gbc, 9, "Precio Venta (L):", txtPrecioVenta);
         
-        agregarFilaCorta(pnlForm, gbc, 6, "Precio Compra (L):", txtPrecioCompra);
-        agregarFilaCorta(pnlForm, gbc, 7, "Precio Venta (L):", txtPrecioVenta);
-        
-        gbc.gridy = 8; gbc.gridx = 0; gbc.weightx = 0.0; gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.EAST;
+        gbc.gridy = 10; gbc.gridx = 0; gbc.weightx = 0.0; gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.EAST;
         pnlForm.add(chkPrecioMayorista, gbc);
         gbc.gridx = 1; gbc.weightx = 1.0; gbc.anchor = GridBagConstraints.WEST;
         txtPrecioMayorista.setPreferredSize(new Dimension(150, 32)); 
@@ -142,13 +155,11 @@ public class PanelCrearProducto extends JPanel {
         txtPrecioMayorista.setForeground(Color.WHITE);
         txtPrecioMayorista.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(80, 80, 80)), BorderFactory.createEmptyBorder(5, 8, 5, 8)));
         pnlForm.add(txtPrecioMayorista, gbc);
-        
-        agregarFilaCorta(pnlForm, gbc, 9, "Stock Inicial:", txtStockInicial);
-        agregarFilaCorta(pnlForm, gbc, 10, "Stock Mínimo:", txtStockMinimo);
+        agregarFilaCorta(pnlForm, gbc, 11, "Stock Inicial:", txtStockInicial);
+        agregarFilaCorta(pnlForm, gbc, 12, "Stock Mínimo:", txtStockMinimo);
 
-        gbc.gridy = 11; gbc.weighty = 1.0;
+        gbc.gridy = 13; gbc.weighty = 1.0;
         pnlForm.add(new JLabel(""), gbc);
-
         JScrollPane scrollForm = new JScrollPane(pnlForm);
         scrollForm.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(70, 70, 70), 1),
@@ -157,7 +168,7 @@ public class PanelCrearProducto extends JPanel {
         scrollForm.getVerticalScrollBar().setUnitIncrement(16);
 
         // --- DERECHA: PANEL DE IMAGEN ---
-        JPanel pnlImagen = new JPanel();
+        JPanel pnlImagen = new JPanel(); 
         pnlImagen.setLayout(new BoxLayout(pnlImagen, BoxLayout.Y_AXIS));
         pnlImagen.setBackground(new Color(30, 30, 30));
         pnlImagen.setBorder(BorderFactory.createCompoundBorder(
@@ -307,6 +318,9 @@ public class PanelCrearProducto extends JPanel {
             p.setStockProducto(Integer.parseInt(txtStockInicial.getText().trim()));
             p.setStockMinimo(Integer.parseInt(txtStockMinimo.getText().trim()));
             p.setRutaImagen(rutaImagenSeleccionada);
+            p.setDiasGarantia(valoresGarantia[cmbDiasGarantia.getSelectedIndex()]);
+            p.setRequiereSerie(chkRequiereSerie.isSelected());
+            // -----------------------------------------
 
             InventarioDAO dao = new InventarioDAO();
             boolean exito;
@@ -335,6 +349,7 @@ public class PanelCrearProducto extends JPanel {
         lblVistaPreviaImagen.setIcon(null); lblVistaPreviaImagen.setText("Sin Imagen"); rutaImagenSeleccionada = null;
         cmbCategoria.setSelectedIndex(0); cmbProveedor.setSelectedIndex(0); cmbUbicacion.setSelectedIndex(0);
         codigosEnRam = new InventarioDAO().obtenerCodigosEnRam();
+        cmbDiasGarantia.setSelectedIndex(0); chkRequiereSerie.setSelected(false);
     }
     
     private void cargarDatosEdicion() {
@@ -349,7 +364,6 @@ public class PanelCrearProducto extends JPanel {
             txtPrecioMayorista.setText(String.valueOf(productoAEditar.getPrecioMayorista()));
         }
         
-        // Bloquear el stock porque es por Kardex
         txtStockInicial.setText(String.valueOf(productoAEditar.getStockProducto()));
         txtStockInicial.setEnabled(false);
         txtStockInicial.setToolTipText("El stock solo puede modificarse a través del Kardex.");
@@ -359,6 +373,12 @@ public class PanelCrearProducto extends JPanel {
         seleccionarComboPorId(cmbCategoria, productoAEditar.getIdCategoria());
         seleccionarComboPorId(cmbProveedor, productoAEditar.getIdProveedor());
         seleccionarComboPorId(cmbUbicacion, productoAEditar.getIdUbicacion());
+        
+        chkRequiereSerie.setSelected(productoAEditar.isRequiereSerie());
+        int dias = productoAEditar.getDiasGarantia();
+        int index = 0;
+        for (int i = 0; i < valoresGarantia.length; i++) { if (valoresGarantia[i] == dias) index = i; }
+        cmbDiasGarantia.setSelectedIndex(index);
         
         if(productoAEditar.getRutaImagen() != null && new File(productoAEditar.getRutaImagen()).exists()) {
             rutaImagenSeleccionada = productoAEditar.getRutaImagen();
@@ -400,10 +420,8 @@ public class PanelCrearProducto extends JPanel {
         JTextField txtDesc = null, txtGarantia = null, txtEncargado = null, txtTel = null, txtDir = null, txtRepuestos = null;
 
         if (tipoCatalogo.equals("Categoría")) {
-            txtDesc = crearInputOscuro();
             txtGarantia = crearInputOscuro();
             permitirSoloNumeros(txtGarantia, false); // Solo números para los días
-            agregarFilaDialog(pnlForm, gbc, 1, "Descripción:", txtDesc);
             agregarFilaDialog(pnlForm, gbc, 2, "Días de Garantía:", txtGarantia);
         } else if (tipoCatalogo.equals("Proveedor")) {
             txtEncargado = crearInputOscuro(); txtTel = crearInputOscuro();

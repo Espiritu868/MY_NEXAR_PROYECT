@@ -24,7 +24,98 @@ public class GeneradorTickets {
      * Construye la vista previa del ticket para la interfaz gráfica.
      * Ahora estructurado exactamente igual que el PDF generado.
      */
+    /**
+     * VISTA PREVIA EDITABLE: Usado exclusivamente por PanelConfiguracionImpresion
+     * para mostrar datos ficticios y permitir editar el pie de página.
+     */
+   /**
+     * VISTA PREVIA EDITABLE: Usado exclusivamente por PanelConfiguracionImpresion
+     * para mostrar datos ficticios y permitir editar el pie de página.
+     */
+    /**
+     * VISTA PREVIA EDITABLE: Usado exclusivamente por PanelConfiguracionImpresion
+     * para mostrar datos ficticios y permitir editar el pie de página.
+     */
     public static JPanel crearTicketVistaPrevia(String tituloDocumento, JTextArea txtAreaEditable) {
+        JPanel panelCentrador = new JPanel(new GridBagLayout());
+        panelCentrador.setBackground(new Color(30, 30, 30)); 
+
+        JPanel pnlTicket = new JPanel();
+        pnlTicket.setLayout(new BoxLayout(pnlTicket, BoxLayout.Y_AXIS));
+        pnlTicket.setBackground(Color.WHITE);
+        pnlTicket.setPreferredSize(new Dimension(300, 600));
+        pnlTicket.setMinimumSize(new Dimension(300, 600));
+        pnlTicket.setMaximumSize(new Dimension(300, 600));
+
+        pnlTicket.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
+            BorderFactory.createEmptyBorder(20, 15, 20, 15)
+        ));
+
+        Font fBold = new Font("Courier New", Font.BOLD, 13);
+        Font fNormal = new Font("Courier New", Font.PLAIN, 12);
+        Font fTitulo = new Font("Courier New", Font.BOLD, 16);
+
+        modelo.Empresa emp = utilidades.SesionGlobal.getEmpresaActual();
+        
+        String empNombre = emp != null && emp.getNombreEmpresa() != null ? emp.getNombreEmpresa().toUpperCase() : "ORION STORE";
+        String empDueño = emp != null && emp.getDuenoEmpresa() != null ? "Prop: " + emp.getDuenoEmpresa() : "";
+        String empRtn = emp != null && emp.getRtnEmpresa() != null ? "RTN: " + emp.getRtnEmpresa() : "RTN: PENDIENTE";
+        
+        pnlTicket.add(crearLabelCentrado(empNombre, fTitulo, Color.BLACK));
+        pnlTicket.add(Box.createVerticalStrut(5));
+        
+        if (!empDueño.isEmpty()) pnlTicket.add(crearLabelCentrado(empDueño, fBold, Color.DARK_GRAY));
+        pnlTicket.add(crearLabelCentrado(empRtn, fBold, Color.DARK_GRAY));
+        pnlTicket.add(Box.createVerticalStrut(10));
+
+        if (emp != null) {
+            if (emp.getDireccionEmpresa() != null && !emp.getDireccionEmpresa().isEmpty()) pnlTicket.add(crearLabelConIcono("dir", emp.getDireccionEmpresa(), fNormal, Color.BLACK));
+            if (emp.getNumeroTelefono() != null && !emp.getNumeroTelefono().isEmpty()) pnlTicket.add(crearLabelConIcono("tel", emp.getNumeroTelefono(), fNormal, Color.BLACK));
+            if (emp.getTelefonoSecundario() != null && !emp.getTelefonoSecundario().isEmpty()) pnlTicket.add(crearLabelConIcono("tel", emp.getTelefonoSecundario(), fNormal, Color.BLACK));
+            if (emp.getWhatsapp() != null && !emp.getWhatsapp().isEmpty()) pnlTicket.add(crearLabelConIcono("wa", emp.getWhatsapp(), fNormal, Color.BLACK));
+            if (emp.getFacebook() != null && !emp.getFacebook().isEmpty()) pnlTicket.add(crearLabelConIcono("fb", emp.getFacebook(), fNormal, Color.BLACK));
+            if (emp.getEmail() != null && !emp.getEmail().isEmpty()) pnlTicket.add(crearLabelConIcono("mail", emp.getEmail(), fNormal, Color.BLACK));
+            if (emp.getWeb() != null && !emp.getWeb().isEmpty()) pnlTicket.add(crearLabelConIcono("web", emp.getWeb(), fNormal, Color.BLACK));
+        }
+        
+        pnlTicket.add(Box.createVerticalStrut(10));
+        pnlTicket.add(crearLabelCentrado(tituloDocumento, fBold, Color.BLACK));
+        pnlTicket.add(Box.createVerticalStrut(10));
+
+        pnlTicket.add(crearLabelCentrado("Cliente: CONSUMIDOR FINAL", fNormal, Color.BLACK));
+        pnlTicket.add(crearLabelCentrado("Fecha: 01/01/2026 12:00", fNormal, Color.BLACK));
+        pnlTicket.add(crearLabelCentrado("Pago via: Efectivo", fNormal, Color.BLACK));
+        pnlTicket.add(crearLabelCentrado("-------------------------------", fNormal, Color.BLACK));
+        pnlTicket.add(crearLabelCentrado("C. DESCRIPCION        TOTAL", fNormal, Color.BLACK));
+        pnlTicket.add(crearLabelCentrado("-------------------------------", fNormal, Color.BLACK));
+        pnlTicket.add(crearLabelCentrado("1  Reemplazo LCD     1500.00", fNormal, Color.BLACK));
+        pnlTicket.add(crearLabelCentrado("   S/N: 35848291039384", fNormal, Color.DARK_GRAY));
+        pnlTicket.add(crearLabelCentrado("   Gtia: 30 dias (Vence 31/01)", fNormal, Color.DARK_GRAY));
+        pnlTicket.add(crearLabelCentrado("1  Mantenimiento      500.00", fNormal, Color.BLACK));
+        pnlTicket.add(crearLabelCentrado("-------------------------------", fNormal, Color.BLACK));
+        
+        JPanel pnlTotales = new JPanel(new GridLayout(3, 1));
+        pnlTotales.setOpaque(false);
+        pnlTotales.add(crearLabelAlineadoDer("SUBTOTAL: L  1739.13", fBold));
+        pnlTotales.add(crearLabelAlineadoDer("I.S.V (15%): L   260.87", fBold));
+        pnlTotales.add(crearLabelAlineadoDer("TOTAL A PAGAR: L  2000.00", fBold));
+        
+        pnlTotales.setMaximumSize(new Dimension(250, 60));
+        pnlTicket.add(pnlTotales);
+        
+        pnlTicket.add(crearLabelCentrado("===============================", fNormal, Color.BLACK));
+        pnlTicket.add(Box.createVerticalStrut(10));
+
+        // El TextArea editable se inyecta al final
+        txtAreaEditable.setAlignmentX(Component.CENTER_ALIGNMENT);
+        pnlTicket.add(txtAreaEditable);
+
+        panelCentrador.add(pnlTicket);
+        return panelCentrador;
+    }
+    
+   public static JPanel crearTicketVistaPrevia(String tituloDocumento, String cliente, String fecha, java.util.List<Object[]> detalles, double subtotal, double isv, double total, String metodoPago, String refPago, String bancoPago) {
         JPanel panelCentrador = new JPanel(new GridBagLayout());
         panelCentrador.setBackground(new Color(30, 30, 30)); 
 
@@ -48,7 +139,7 @@ public class GeneradorTickets {
         modelo.Empresa emp = SesionGlobal.getEmpresaActual();
         
         // --- 1. EXTRACCIÓN EXACTA COMO EN EL PDF ---
-        String empNombre = emp != null && emp.getNombreEmpresa() != null ? emp.getNombreEmpresa().toUpperCase() : "NEXAR STORE";
+        String empNombre = emp != null && emp.getNombreEmpresa() != null ? emp.getNombreEmpresa().toUpperCase() : "ORION STORE";
         String empDueño = emp != null && emp.getDuenoEmpresa() != null ? "Prop: " + emp.getDuenoEmpresa() : "";
         String empRtn = emp != null && emp.getRtnEmpresa() != null ? "RTN: " + emp.getRtnEmpresa() : "RTN: PENDIENTE";
         
@@ -77,31 +168,45 @@ public class GeneradorTickets {
                 pnlTicket.add(crearLabelConIcono("web", emp.getWeb(), fNormal, Color.BLACK));
         }
         
-        // --- 3. DATOS FICTICIOS PARA LA VISTA PREVIA ---
-        pnlTicket.add(crearLabelCentrado("Cliente: CONSUMIDOR FINAL", fNormal, Color.BLACK));
-        pnlTicket.add(crearLabelCentrado("Fecha: 01/01/2026 12:00", fNormal, Color.BLACK));
-        pnlTicket.add(crearLabelCentrado("-------------------------------", fNormal, Color.BLACK));
-        pnlTicket.add(crearLabelCentrado("C. DESCRIPCION       TOTAL", fNormal, Color.BLACK));
-        pnlTicket.add(crearLabelCentrado("-------------------------------", fNormal, Color.BLACK));
-        pnlTicket.add(crearLabelCentrado("1  Reemplazo LCD     1500.00", fNormal, Color.BLACK));
-        pnlTicket.add(crearLabelCentrado("1  Mantenimiento      500.00", fNormal, Color.BLACK));
+       // --- 3. DATOS REALES ASIGNADOS HISTÓRICAMENTE ---
+        pnlTicket.add(crearLabelCentrado("Cliente: " + cliente, fNormal, Color.BLACK));
+        pnlTicket.add(crearLabelCentrado("Fecha: " + fecha, fNormal, Color.BLACK));
+        
+        if (metodoPago != null) pnlTicket.add(crearLabelCentrado("Pago via: " + metodoPago, fNormal, Color.BLACK));
+        if (bancoPago != null && !bancoPago.isEmpty()) pnlTicket.add(crearLabelCentrado("Banco: " + bancoPago, fNormal, Color.BLACK));
+        if (refPago != null && !refPago.isEmpty()) pnlTicket.add(crearLabelCentrado("Ref/Voucher: " + refPago, fNormal, Color.BLACK));
+        
+        // Bucle para pintar los productos reales
+        for (Object[] fila : detalles) {
+            String imei = (fila[1] != null) ? fila[1].toString() : "";
+            String nom = fila[2].toString();
+            int cant = (int) fila[3];
+            double totalFila = (double) fila[5];
+            int diasGarantia = (fila.length > 6 && fila[6] != null) ? (int) fila[6] : 0;
+            
+            // Nombre abreviado a 15 caracteres para que cuadre en la vista
+            String nomCorto = nom.length() > 15 ? nom.substring(0, 15) : String.format("%-15s", nom);
+            pnlTicket.add(crearLabelCentrado(String.format("%-2s %s %6.2f", cant, nomCorto, totalFila), fNormal, Color.BLACK));
+            
+            if (!imei.isEmpty()) pnlTicket.add(crearLabelCentrado("   S/N: " + imei, fNormal, Color.DARK_GRAY));
+            if (diasGarantia > 0) {
+                java.util.Calendar cal = java.util.Calendar.getInstance(); cal.add(java.util.Calendar.DAY_OF_YEAR, diasGarantia);
+                pnlTicket.add(crearLabelCentrado("   Gtia: " + diasGarantia + " dias", fNormal, Color.DARK_GRAY));
+            }
+        }
         pnlTicket.add(crearLabelCentrado("-------------------------------", fNormal, Color.BLACK));
         
         JPanel pnlTotales = new JPanel(new GridLayout(3, 1));
         pnlTotales.setOpaque(false);
-        pnlTotales.add(crearLabelAlineadoDer("SUBTOTAL: L  1739.13", fBold));
-        pnlTotales.add(crearLabelAlineadoDer("I.S.V (15%): L   260.87", fBold));
-        pnlTotales.add(crearLabelAlineadoDer("TOTAL A PAGAR: L  2000.00", fBold));
+        pnlTotales.add(crearLabelAlineadoDer(String.format("SUBTOTAL: L %8.2f", subtotal), fBold));
+        pnlTotales.add(crearLabelAlineadoDer(String.format("I.S.V (15%%): L %8.2f", isv), fBold));
+        pnlTotales.add(crearLabelAlineadoDer(String.format("TOTAL: L %8.2f", total), fBold));
         
         pnlTotales.setMaximumSize(new Dimension(250, 60));
         pnlTicket.add(pnlTotales);
         
         pnlTicket.add(crearLabelCentrado("===============================", fNormal, Color.BLACK));
         pnlTicket.add(Box.createVerticalStrut(10));
-
-        // --- 4. PIE DE PÁGINA DINÁMICO (Editable por el usuario) ---
-        txtAreaEditable.setAlignmentX(Component.CENTER_ALIGNMENT);
-        pnlTicket.add(txtAreaEditable);
 
         panelCentrador.add(pnlTicket);
         return panelCentrador;
@@ -130,8 +235,7 @@ public class GeneradorTickets {
      * Genera el archivo PDF físico del ticket de venta utilizando iTextPDF.
      * Incorpora dibujos vectoriales para las redes sociales y salto de línea en descripciones largas.
      */
-    public static void generarTicketVentaPDF(String rutaDestino, String nombreCliente, java.util.List<Object[]> detalles, double subtotal, double isv, double total, boolean esFactura) throws Exception {
-        Rectangle tamanoTicket = new Rectangle(226, 800); // Formato de ticket térmico 80mm
+    public static void generarTicketVentaPDF(String rutaDestino, String nombreCliente, String fecha, java.util.List<Object[]> detalles, double subtotal, double isv, double total, boolean esFactura, String metodoPago, String referenciaPago, String bancoPago) throws Exception {        Rectangle tamanoTicket = new Rectangle(226, 800); // Formato de ticket térmico 80mm
         Document documento = new Document(tamanoTicket, 10, 10, 10, 10);
         PdfWriter writer = PdfWriter.getInstance(documento, new FileOutputStream(rutaDestino));
         documento.open();
@@ -142,7 +246,7 @@ public class GeneradorTickets {
 
         Empresa emp = SesionGlobal.getEmpresaActual();
         
-        String empNombre = emp != null && emp.getNombreEmpresa() != null ? emp.getNombreEmpresa().toUpperCase() : "NEXAR STORE";
+        String empNombre = emp != null && emp.getNombreEmpresa() != null ? emp.getNombreEmpresa().toUpperCase() : "ORIN STORE";
         String empDueño = emp != null && emp.getDuenoEmpresa() != null ? "Prop: " + emp.getDuenoEmpresa() : "";
         String empRtn = emp != null && emp.getRtnEmpresa() != null ? "RTN: " + emp.getRtnEmpresa() : "RTN: PENDIENTE";
 
@@ -181,31 +285,47 @@ public class GeneradorTickets {
         tituloDoc.setAlignment(Element.ALIGN_CENTER);
         documento.add(tituloDoc);
 
-        // Información de Venta
-        Paragraph info = new Paragraph("Cliente: " + nombreCliente + "\nFecha: " + new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(new java.util.Date()) + "\n-------------------------------\n", fNormal);
+        // Información de Venta y Control de Pago
+        StringBuilder sbInfo = new StringBuilder();
+        sbInfo.append("Cliente: ").append(nombreCliente).append("\n");
+        
+        // CORRECCIÓN: Fijamos la fecha histórica provista por el parámetro
+        sbInfo.append("Fecha: ").append(fecha).append("\n");
+        
+        sbInfo.append("Pago via: ").append(metodoPago).append("\n");
+        if (bancoPago != null && !bancoPago.trim().isEmpty()) {
+            sbInfo.append("Banco: ").append(bancoPago.trim()).append("\n");
+        }
+        if (referenciaPago != null && !referenciaPago.trim().isEmpty()) {
+            sbInfo.append("Ref/Voucher: ").append(referenciaPago.trim()).append("\n");
+        }
+        sbInfo.append("-------------------------------\n");
+
+        Paragraph info = new Paragraph(sbInfo.toString(), fNormal);
         info.setAlignment(Element.ALIGN_LEFT);
         documento.add(info);
 
-        // --- DETALLES DE PRODUCTOS CON SALTO DE LÍNEA INTELIGENTE ---
+        // --- DETALLES DE PRODUCTOS CON SALTO DE LÍNEA E IDENTIFICADORES ---
         StringBuilder sbDetalles = new StringBuilder();
         sbDetalles.append(String.format("%-2s %-15s %6s\n", "C.", "DESCRIPCION", "TOTAL"));
         sbDetalles.append("-------------------------------\n");
         
+        boolean ticketTieneGarantias = false; // Bandera para saber si imprimimos políticas al final
+        
         for (Object[] fila : detalles) {
+            String imei = (fila[1] != null) ? fila[1].toString() : "";
             String nom = fila[2].toString();
             int cant = (int) fila[3];
             double totalFila = (double) fila[5];
+            int diasGarantia = (fila.length > 6 && fila[6] != null) ? (int) fila[6] : 0;
 
-            int maxLen = 15; // Límite de caracteres antes de bajar de renglón
+            int maxLen = 15; 
             
+            // 1. Imprimir Nombre, Cantidad y Precio
             if (nom.length() <= maxLen) {
-                // Producto corto: Imprime normal
                 sbDetalles.append(String.format("%-2s %-15s %6.2f\n", cant, nom, totalFila));
             } else {
-                // Producto largo: Imprime la primera línea con cantidades y precios
                 sbDetalles.append(String.format("%-2s %-15s %6.2f\n", cant, nom.substring(0, maxLen), totalFila));
-                
-                // Baja de renglón imprimiendo el resto del nombre perfectamente alineado
                 int index = maxLen;
                 while (index < nom.length()) {
                     int end = Math.min(index + maxLen, nom.length());
@@ -213,10 +333,38 @@ public class GeneradorTickets {
                     index += maxLen;
                 }
             }
+            
+            // 2. Imprimir Identificador y Vencimiento de Garantía (Si Aplica)
+            if (!imei.isEmpty() || diasGarantia > 0) {
+                ticketTieneGarantias = true;
+                if (!imei.isEmpty()) {
+                    sbDetalles.append(String.format("   S/N: %s\n", imei));
+                }
+                if (diasGarantia > 0) {
+                    // Calculamos automáticamente la fecha de vencimiento
+                    java.util.Calendar cal = java.util.Calendar.getInstance();
+                    cal.add(java.util.Calendar.DAY_OF_YEAR, diasGarantia);
+                    String fechaVence = new java.text.SimpleDateFormat("dd/MM/yy").format(cal.getTime());
+                    sbDetalles.append(String.format("   Gtia: %d dias (Vence %s)\n", diasGarantia, fechaVence));
+                }
+            }
         }
         sbDetalles.append("-------------------------------\n");
         Paragraph parrafoDetalles = new Paragraph(sbDetalles.toString(), fNormal);
         documento.add(parrafoDetalles);
+        if (ticketTieneGarantias) {
+            String textoPoliticas = emp != null && emp.getPoliticasGarantia() != null ? emp.getPoliticasGarantia() : "Conserve este ticket. La garantía no aplica por daños físicos, humedad, exposición a líquidos o manipulación por terceros.";
+            
+            // 1. Título Centrado y en Negrita (Usa fBold)
+            Paragraph tituloGarantia = new Paragraph("--- POLITICAS DE GARANTIA ---\n", fBold);
+            tituloGarantia.setAlignment(Element.ALIGN_CENTER);
+            documento.add(tituloGarantia);
+
+            // 2. Texto de las políticas Justificado y Normal (Usa fNormal)
+            Paragraph parrafoGarantia = new Paragraph(textoPoliticas + "\n\n", fNormal);
+            parrafoGarantia.setAlignment(Element.ALIGN_JUSTIFIED);
+            documento.add(parrafoGarantia);
+        }
 
         // --- TOTALES FINALES ---
         Paragraph totales = new Paragraph(

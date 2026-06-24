@@ -46,7 +46,7 @@ public class PanelAdministracion extends JPanel {
         panelContenedorAdmon.setLayout(new BorderLayout());
         panelContenedorAdmon.setBackground(new Color(18, 18, 18));
         
-        JLabel lblAdmon = new JLabel("Gracias por confiar en NEXAR. \nPor favor, seleccione una opción del menú superior", SwingConstants.CENTER);
+        JLabel lblAdmon = new JLabel("Gracias por confiar en ORION SYSTEMS. \nPor favor, seleccione una opción del menú superior", SwingConstants.CENTER);
         lblAdmon.setForeground(new Color(100, 100, 100));
         lblAdmon.setFont(new Font("Segoe UI", Font.ITALIC, 18));
         panelContenedorAdmon.add(lblAdmon, BorderLayout.CENTER);

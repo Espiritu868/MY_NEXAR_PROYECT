@@ -103,7 +103,7 @@ public class ConexionFactory {
 
             if (msjOriginal.contains("tcp/ip") || msjOriginal.contains("connection refused") || msjOriginal.contains("se ha denegado la conexión")) {
                 tituloAlerta = "El Servidor está Apagado o Bloqueado (TCP/IP)";
-                msjTraducido = "Nexar no puede alcanzar la base de datos.\n\n"
+                msjTraducido = "ORION SYSTEMS no puede alcanzar la base de datos.\n\n"
                              + "SOLUCIONES SUGERIDAS:\n"
                              + "1. El servicio de SQL Server no está iniciado.\n"
                              + "2. El protocolo TCP/IP está deshabilitado en el 'SQL Server Configuration Manager'.\n"

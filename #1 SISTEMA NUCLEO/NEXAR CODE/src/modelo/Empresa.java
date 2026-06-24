@@ -15,12 +15,13 @@ public class Empresa {
     private String web;
     private String facebook;
     
-    // --- Nuevos campos para los tickets y logo ---
+    // campos para los tickets y logo
     private String mensajeTicketPieFactura;
     private String mensajeTicketPieRecibo;
     private String mensajeTicketEntrega;
     private String mensajeTicketPieCotizacion;
     private String logoEmpresaRuta;
+    private String politicasGarantia;
 
     // Constructores vacíos
     public Empresa() {}
@@ -79,4 +80,7 @@ public class Empresa {
 
     public String getLogoEmpresaRuta() { return logoEmpresaRuta; }
     public void setLogoEmpresaRuta(String logoEmpresaRuta) { this.logoEmpresaRuta = logoEmpresaRuta; }
+    
+    public String getPoliticasGarantia() { return politicasGarantia; }
+    public void setPoliticasGarantia(String politicasGarantia) { this.politicasGarantia = politicasGarantia; }
 }

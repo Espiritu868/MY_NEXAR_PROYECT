@@ -66,13 +66,10 @@ public class PanelGestionClientes extends JPanel {
 
         this.add(panelSuperior, BorderLayout.NORTH);
         // --- 2. CONFIGURACIÓN DE LA TABLA ESTILO WEB ---
-        // Columnas 7 y 8 estarán ocultas, guardan el nombre real y el apellido real
-        String[] columnas = {"ID", "", "Nombre Completo", "Identidad/RTN", "Teléfono", "Correo Electrónico", "Acciones", "NombreRaw", "ApellidoRaw"};
+        // Eliminamos la columna "Acciones" y recorremos los ocultos
+        String[] columnas = {"ID", "", "Nombre Completo", "Identidad/RTN", "Teléfono", "Correo Electrónico", "NombreRaw", "ApellidoRaw"};
         modeloTabla = new DefaultTableModel(null, columnas) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return column == 6; // Solo Acciones
-            }
+            @Override public boolean isCellEditable(int row, int column) { return false; } // Nada es editable directamente
         };
 
         tablaClientes = new JTable(modeloTabla);
@@ -92,20 +89,30 @@ public class PanelGestionClientes extends JPanel {
         tablaClientes.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(70, 70, 70)));
         tablaClientes.getTableHeader().setPreferredSize(new Dimension(0, 40));
 
-        // Ocultar ID (0), NombreRaw (7) y ApellidoRaw (8)
+        // Ocultar ID (0), NombreRaw (6) y ApellidoRaw (7)
         ocultarColumna(0);
+        ocultarColumna(6);
         ocultarColumna(7);
-        ocultarColumna(8);
 
-        // Renderizadores
+        // Renderizador de Avatar
         tablaClientes.getColumnModel().getColumn(1).setPreferredWidth(60);
         tablaClientes.getColumnModel().getColumn(1).setMaxWidth(60);
         tablaClientes.getColumnModel().getColumn(1).setCellRenderer(new AvatarRenderer());
 
-        tablaClientes.getColumnModel().getColumn(6).setPreferredWidth(120);
-        tablaClientes.getColumnModel().getColumn(6).setMaxWidth(120);
-        tablaClientes.getColumnModel().getColumn(6).setCellRenderer(new PanelAccionesRenderer());
-        tablaClientes.getColumnModel().getColumn(6).setCellEditor(new PanelAccionesEditor());
+        // --- NUEVA LÓGICA DE MENÚ CONTEXTUAL ---
+        tablaClientes.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                int fila = tablaClientes.rowAtPoint(e.getPoint());
+                if (fila >= 0) {
+                    tablaClientes.setRowSelectionInterval(fila, fila); // Selecciona visualmente la fila
+                    // Mostrar menú con doble clic o clic derecho
+                    if ((SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 2) || SwingUtilities.isRightMouseButton(e)) {
+                        mostrarMenuOpciones(e.getComponent(), e.getX(), e.getY(), fila);
+                    }
+                }
+            }
+        });
 
         // LÓGICA DEL BUSCADOR EN TIEMPO REAL
         sorter = new TableRowSorter<>(modeloTabla);
@@ -116,12 +123,8 @@ public class PanelGestionClientes extends JPanel {
             @Override public void changedUpdate(DocumentEvent e) { filtrar(); }
             private void filtrar() {
                 String texto = txtBusqueda.getText();
-                if (texto.trim().length() == 0) {
-                    sorter.setRowFilter(null);
-                } else {
-                    // Filtra por Nombre Completo (2) y por Identidad (3)
-                    sorter.setRowFilter(RowFilter.regexFilter("(?i)" + texto, 2, 3));
-                }
+                if (texto.trim().length() == 0) sorter.setRowFilter(null);
+                else sorter.setRowFilter(RowFilter.regexFilter("(?i)" + texto, 2, 3));
             }
         });
 
@@ -154,9 +157,8 @@ public class PanelGestionClientes extends JPanel {
                 c.getIdentidadCliente(),    // 3: Identidad
                 c.getTelefonoCliente(),     // 4: Teléfono
                 c.getCorreoCliente(),       // 5: Correo
-                "",                         // 6: Botones
-                c.getNombreCliente(),       // 7: Nombre Real Oculto
-                apellido                    // 8: Apellido Real Oculto
+                c.getNombreCliente(),       // 6: Nombre Real Oculto
+                apellido                    // 7: Apellido Real Oculto
             });
         }
     }
@@ -214,124 +216,110 @@ public class PanelGestionClientes extends JPanel {
         }
     }
 
-    private class IconoEditar implements Icon {
-        @Override
-        public void paintIcon(Component c, Graphics g, int x, int y) {
-            Graphics2D g2 = (Graphics2D) g;
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(new Color(13, 110, 253)); 
-            g2.setStroke(new BasicStroke(2));
-            g2.drawLine(x + 12, y + 2, x + 16, y + 6); 
-            g2.drawLine(x + 16, y + 6, x + 6, y + 16); 
-            g2.drawLine(x + 12, y + 2, x + 2, y + 12); 
-            g2.drawLine(x + 2, y + 12, x + 2, y + 16); 
-            g2.drawLine(x + 2, y + 16, x + 6, y + 16); 
-        }
-        @Override public int getIconWidth() { return 18; }
-        @Override public int getIconHeight() { return 18; }
+    // =========================================================
+    // LÓGICA Y MENÚ CONTEXTUAL DE OPCIONES
+    // =========================================================
+    private void mostrarMenuOpciones(Component componente, int x, int y, int filaVista) {
+        JPopupMenu menu = new JPopupMenu();
+        menu.setBackground(new Color(35, 35, 35));
+        menu.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 70), 1));
+
+        JMenuItem itemEditar = crearMenuItem("Editar Cliente", new Color(13, 110, 253), new IconoLapiz());
+        JMenuItem itemEliminar = crearMenuItem("Eliminar Cliente", new Color(220, 53, 69), new IconoBasurero());
+
+        itemEditar.addActionListener(e -> editarClienteSeleccionado(filaVista));
+        itemEliminar.addActionListener(e -> eliminarClienteSeleccionado(filaVista));
+
+        menu.add(itemEditar);
+        menu.addSeparator(); 
+        menu.add(itemEliminar);
+        
+        menu.show(componente, x, y);
     }
 
-    private class IconoEliminar implements Icon {
-        @Override
-        public void paintIcon(Component c, Graphics g, int x, int y) {
-            Graphics2D g2 = (Graphics2D) g;
+    private void editarClienteSeleccionado(int filaVista) {
+        int filaModelo = tablaClientes.convertRowIndexToModel(filaVista);
+        Cliente c = new Cliente();
+        c.setIdCliente((int) modeloTabla.getValueAt(filaModelo, 0));
+        c.setIdentidadCliente(modeloTabla.getValueAt(filaModelo, 3).toString());
+        c.setTelefonoCliente(modeloTabla.getValueAt(filaModelo, 4) != null ? modeloTabla.getValueAt(filaModelo, 4).toString() : "");
+        c.setCorreoCliente(modeloTabla.getValueAt(filaModelo, 5) != null ? modeloTabla.getValueAt(filaModelo, 5).toString() : "");
+        c.setNombreCliente(modeloTabla.getValueAt(filaModelo, 6).toString());
+        c.setApellidoCliente(modeloTabla.getValueAt(filaModelo, 7).toString());
+        
+        abrirFormularioCliente(c);
+    }
+
+    private void eliminarClienteSeleccionado(int filaVista) {
+        int filaModelo = tablaClientes.convertRowIndexToModel(filaVista);
+        int idCliente = (int) modeloTabla.getValueAt(filaModelo, 0);
+        String nombre = modeloTabla.getValueAt(filaModelo, 2).toString();
+        
+        int confirmacion = JOptionPane.showConfirmDialog(this, 
+            "¿Está seguro de desactivar al cliente: " + nombre + "?", 
+            "Confirmar", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            
+        if (confirmacion == JOptionPane.YES_OPTION) {
+            ClienteDAO dao = new ClienteDAO();
+            if (dao.desactivarCliente(idCliente)) {
+                JOptionPane.showMessageDialog(this, "Cliente eliminado exitosamente.");
+                cargarDatosDesdeBD();
+            }
+        }
+    }
+
+    private JMenuItem crearMenuItem(String texto, Color colorHover, Icon icono) {
+        JMenuItem item = new JMenuItem(texto);
+        item.setIcon(icono);
+        item.setIconTextGap(12);
+        item.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        item.setForeground(Color.WHITE);
+        item.setBackground(new Color(35, 35, 35));
+        item.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        item.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        item.setOpaque(true);
+        item.addChangeListener(e -> {
+            if (item.isArmed()) item.setBackground(colorHover);
+            else item.setBackground(new Color(35, 35, 35));
+        });
+        return item;
+    }
+
+    // =========================================================
+    // ÍCONOS VECTORIALES (JAVA 2D)
+    // =========================================================
+    private class IconoLapiz implements Icon {
+        @Override public int getIconWidth() { return 20; }
+        @Override public int getIconHeight() { return 20; }
+        @Override public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(Color.WHITE);
+            g2.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            // Lápiz de edición diagonal
+            g2.drawPolygon(new int[]{x+14, x+17, x+6, x+3, x+3}, new int[]{y+3, y+6, y+17, y+17, y+14}, 5);
+            g2.drawLine(x+11, y+6, x+14, y+9); 
+            g2.drawLine(x+3, y+17, x+6, y+14); 
+            g2.dispose();
+        }
+    }
+
+    private class IconoBasurero implements Icon {
+        @Override public int getIconWidth() { return 20; }
+        @Override public int getIconHeight() { return 20; }
+        @Override public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setColor(new Color(220, 53, 69)); 
-            g2.setStroke(new BasicStroke(2));
-            g2.drawLine(x + 2, y + 4, x + 16, y + 4); 
-            g2.drawLine(x + 7, y + 2, x + 11, y + 2); 
-            g2.drawRect(x + 4, y + 4, 10, 12); 
-            g2.drawLine(x + 7, y + 7, x + 7, y + 13); 
-            g2.drawLine(x + 11, y + 7, x + 11, y + 13); 
+            g2.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g2.drawRoundRect(x + 8, y + 2, 4, 3, 2, 2);
+            g2.drawLine(x + 4, y + 5, x + 16, y + 5);
+            g2.drawRoundRect(x + 5, y + 5, 10, 12, 3, 3);
+            g2.setStroke(new BasicStroke(1.5f));
+            g2.drawLine(x + 8, y + 8, x + 8, y + 14);
+            g2.drawLine(x + 12, y + 8, x + 12, y + 14);
+            g2.dispose();
         }
-        @Override public int getIconWidth() { return 18; }
-        @Override public int getIconHeight() { return 18; }
-    }
-
-    private class PanelAcciones extends JPanel {
-        private JButton btnEditar;
-        private JButton btnEliminar;
-
-        public PanelAcciones() {
-            setLayout(new FlowLayout(FlowLayout.CENTER, 8, 5));
-            setOpaque(true);
-
-            btnEditar = new JButton(new IconoEditar());
-            btnEditar.setContentAreaFilled(false);
-            btnEditar.setBorder(null);
-            btnEditar.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            btnEditar.setToolTipText("Editar Cliente");
-
-            btnEliminar = new JButton(new IconoEliminar());
-            btnEliminar.setContentAreaFilled(false);
-            btnEliminar.setBorder(null);
-            btnEliminar.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            btnEliminar.setToolTipText("Eliminar Cliente");
-
-            add(btnEditar);
-            add(btnEliminar);
-        }
-        public JButton getBtnEditar() { return btnEditar; }
-        public JButton getBtnEliminar() { return btnEliminar; }
-    }
-
-    private class PanelAccionesRenderer implements TableCellRenderer {
-        private PanelAcciones panel = new PanelAcciones();
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            panel.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
-            return panel;
-        }
-    }
-
-    private class PanelAccionesEditor extends AbstractCellEditor implements TableCellEditor {
-        private PanelAcciones panel = new PanelAcciones();
-        private int filaVista;
-
-        public PanelAccionesEditor() {
-            panel.getBtnEditar().addActionListener(e -> {
-                fireEditingStopped();
-                int filaModelo = tablaClientes.convertRowIndexToModel(filaVista);
-                
-                Cliente c = new Cliente();
-                c.setIdCliente((int) modeloTabla.getValueAt(filaModelo, 0));
-                c.setIdentidadCliente(modeloTabla.getValueAt(filaModelo, 3).toString());
-                c.setTelefonoCliente(modeloTabla.getValueAt(filaModelo, 4) != null ? modeloTabla.getValueAt(filaModelo, 4).toString() : "");
-                c.setCorreoCliente(modeloTabla.getValueAt(filaModelo, 5) != null ? modeloTabla.getValueAt(filaModelo, 5).toString() : "");
-                c.setNombreCliente(modeloTabla.getValueAt(filaModelo, 7).toString());
-                c.setApellidoCliente(modeloTabla.getValueAt(filaModelo, 8).toString());
-                
-                abrirFormularioCliente(c);
-            });
-
-            panel.getBtnEliminar().addActionListener(e -> {
-                fireEditingStopped();
-                int filaModelo = tablaClientes.convertRowIndexToModel(filaVista);
-                int idCliente = (int) modeloTabla.getValueAt(filaModelo, 0);
-                String nombre = modeloTabla.getValueAt(filaModelo, 2).toString();
-                
-                int confirmacion = JOptionPane.showConfirmDialog(panel, 
-                    "¿Está seguro de desactivar al cliente: " + nombre + "?", 
-                    "Confirmar", JOptionPane.YES_NO_OPTION);
-                    
-                if (confirmacion == JOptionPane.YES_OPTION) {
-                    ClienteDAO dao = new ClienteDAO();
-                    if (dao.desactivarCliente(idCliente)) {
-                        JOptionPane.showMessageDialog(panel, "Cliente eliminado.");
-                        cargarDatosDesdeBD();
-                    }
-                }
-            });
-        }
-
-        @Override
-        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
-            filaVista = row;
-            panel.setBackground(table.getSelectionBackground());
-            return panel;
-        }
-        @Override
-        public Object getCellEditorValue() { return null; }
     }
    @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents

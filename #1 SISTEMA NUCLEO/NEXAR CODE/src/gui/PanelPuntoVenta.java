@@ -37,6 +37,11 @@ public class PanelPuntoVenta extends JPanel {
     private double sumImpuesto = 0.0;
     private double granTotal = 0.0;
     private boolean facturacionHabilitada = false;
+    
+    private JPanel pnlCamposExtraPago;
+    private JLabel lblReferenciaPago;
+    private JTextField txtReferenciaPago;
+    private JComboBox<String> cmbBanco;
 
     public PanelPuntoVenta() {
         if (utilidades.SesionGlobal.getEmpresaActual() != null) {
@@ -80,7 +85,7 @@ public class PanelPuntoVenta extends JPanel {
         pnlTop.add(pnlClientes, BorderLayout.WEST); pnlTop.add(pnlLector, BorderLayout.EAST);
         this.add(pnlTop, BorderLayout.NORTH);
 
-        String[] columnas = {"ID", "Foto", "Nombre del Producto", "Cant.", "Precio Unit.", "Subtotal Fila", "StockMax", "RutaFoto"};
+        String[] columnas = {"ID", "Foto", "Nombre del Producto", "Cant.", "Precio Unit.", "Subtotal Fila", "StockMax", "RutaFoto", "IMEI", "DiasGarantia"};
         modeloTablaVentas = new DefaultTableModel(null, columnas) { @Override public boolean isCellEditable(int row, int column) { return false; } };
         tablaVentas = new JTable(modeloTablaVentas); 
         tablaVentas.setShowGrid(false); tablaVentas.setRowHeight(60); tablaVentas.setBackground(new Color(30, 30, 30)); tablaVentas.setForeground(Color.WHITE); tablaVentas.setFont(new Font("Segoe UI", Font.PLAIN, 14)); tablaVentas.setSelectionBackground(new Color(50, 50, 50));
@@ -90,41 +95,81 @@ public class PanelPuntoVenta extends JPanel {
         tablaVentas.getColumnModel().getColumn(0).setMinWidth(0); tablaVentas.getColumnModel().getColumn(0).setMaxWidth(0); 
         tablaVentas.getColumnModel().getColumn(6).setMinWidth(0); tablaVentas.getColumnModel().getColumn(6).setMaxWidth(0); 
         tablaVentas.getColumnModel().getColumn(7).setMinWidth(0); tablaVentas.getColumnModel().getColumn(7).setMaxWidth(0); 
+        tablaVentas.getColumnModel().getColumn(8).setMinWidth(0); tablaVentas.getColumnModel().getColumn(8).setMaxWidth(0);
+        tablaVentas.getColumnModel().getColumn(9).setMinWidth(0); tablaVentas.getColumnModel().getColumn(9).setMaxWidth(0);
         
         tablaVentas.getColumnModel().getColumn(1).setPreferredWidth(70); tablaVentas.getColumnModel().getColumn(1).setMaxWidth(70);
         tablaVentas.getColumnModel().getColumn(1).setCellRenderer(new ImagenMiniaturaRenderer());
-
+        tablaVentas.getColumnModel().getColumn(7).setMinWidth(0); tablaVentas.getColumnModel().getColumn(7).setMaxWidth(0); 
+        
+        tablaVentas.getColumnModel().getColumn(1).setPreferredWidth(70); tablaVentas.getColumnModel().getColumn(1).setMaxWidth(70);
+        tablaVentas.getColumnModel().getColumn(1).setCellRenderer(new ImagenMiniaturaRenderer());
+        
         tablaVentas.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
             @Override public void mouseMoved(java.awt.event.MouseEvent e) {
                 if (tablaVentas.columnAtPoint(e.getPoint()) == 1) tablaVentas.setCursor(new Cursor(Cursor.HAND_CURSOR));
                 else tablaVentas.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
             }
         });
+        
         tablaVentas.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override public void mouseClicked(java.awt.event.MouseEvent e) {
                 int f = tablaVentas.rowAtPoint(e.getPoint());
-                if (f >= 0 && tablaVentas.columnAtPoint(e.getPoint()) == 1) {
-                    mostrarZoomImagen((String) modeloTablaVentas.getValueAt(tablaVentas.convertRowIndexToModel(f), 7));
+                int c = tablaVentas.columnAtPoint(e.getPoint());
+                
+                if (f >= 0) {
+                    tablaVentas.setRowSelectionInterval(f, f);
+
+                    if (c == 1 && SwingUtilities.isLeftMouseButton(e)) {
+                        mostrarZoomImagen((String) modeloTablaVentas.getValueAt(tablaVentas.convertRowIndexToModel(f), 7));
+                    }
+                    if ((SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 2 && c != 1) || SwingUtilities.isRightMouseButton(e)) {
+                        mostrarMenuOpciones(e.getComponent(), e.getX(), e.getY());
+                    }
                 }
             }
         });
 
-        JScrollPane scrollTabla = new JScrollPane(tablaVentas); scrollTabla.setBorder(BorderFactory.createLineBorder(new Color(50, 50, 50))); scrollTabla.getViewport().setBackground(new Color(18, 18, 18));
+        JScrollPane scrollTabla = new JScrollPane(tablaVentas); 
+        scrollTabla.setBorder(BorderFactory.createLineBorder(new Color(50, 50, 50))); 
+        scrollTabla.getViewport().setBackground(new Color(18, 18, 18));
         this.add(scrollTabla, BorderLayout.CENTER);
 
         JPanel pnlControlVenta = new JPanel(new BorderLayout(20, 20)); pnlControlVenta.setOpaque(false); pnlControlVenta.setPreferredSize(new Dimension(300, 0));
-
-        JPanel pnlAcciones = new JPanel(new GridLayout(3, 1, 0, 10)); pnlAcciones.setOpaque(false);
-        JButton btnModPrecio = new JButton("Modificar Precio Detalle"); btnModPrecio.setBackground(new Color(40, 40, 40)); btnModPrecio.setForeground(Color.WHITE); btnModPrecio.setFocusPainted(false); btnModPrecio.setCursor(new Cursor(Cursor.HAND_CURSOR)); btnModPrecio.addActionListener(e -> modificarPrecio());
-        JButton btnModCantidad = new JButton("Modificar Cantidad"); btnModCantidad.setBackground(new Color(40, 40, 40)); btnModCantidad.setForeground(Color.WHITE); btnModCantidad.setFocusPainted(false); btnModCantidad.setCursor(new Cursor(Cursor.HAND_CURSOR)); btnModCantidad.addActionListener(e -> modificarCantidad());
-        JButton btnQuitar = new JButton("Quitar Producto"); btnQuitar.setBackground(new Color(220, 53, 69)); btnQuitar.setForeground(Color.WHITE); btnQuitar.setFocusPainted(false); btnQuitar.setCursor(new Cursor(Cursor.HAND_CURSOR)); btnQuitar.addActionListener(e -> quitarProducto());
-        pnlAcciones.add(btnModPrecio); pnlAcciones.add(btnModCantidad); pnlAcciones.add(btnQuitar);
 
         JPanel pnlLiquidacion = new JPanel(new GridBagLayout()); pnlLiquidacion.setBackground(new Color(25, 25, 25)); pnlLiquidacion.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         GridBagConstraints gbc = new GridBagConstraints(); gbc.fill = GridBagConstraints.HORIZONTAL; gbc.gridx = 0; gbc.weightx = 1.0; gbc.insets = new Insets(5, 0, 5, 0);
 
         cmbMetodoPago = new JComboBox<>(); cmbMetodoPago.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        cmbMetodoPago.addActionListener(e -> recalcularTotales());
+        
+        pnlCamposExtraPago = new JPanel(new GridLayout(4, 1, 0, 5)); pnlCamposExtraPago.setOpaque(false);
+        pnlCamposExtraPago.setVisible(false);
+        
+        JLabel lblBanco = new JLabel("Banco Emisor:"){{ setForeground(Color.GRAY); setFont(new Font("Segoe UI", Font.BOLD, 12)); }};
+        String[] bancosHonduras = {"Seleccione Banco...", "Banco Atlántida", "BAC Credomatic", "Banco Ficohsa", "Banpaís", "Banco de Occidente", "Banco Banrural", "Banco Promerica", "Banco LAFISE", "Banco FICENSA", "Banco BANHCAFE", "ACH - Transferencia Interbancaria"};
+        cmbBanco = new JComboBox<>(bancosHonduras); cmbBanco.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        
+        lblReferenciaPago = new JLabel("Nº Referencia:"){{ setForeground(Color.GRAY); setFont(new Font("Segoe UI", Font.BOLD, 12)); }};
+        txtReferenciaPago = new JTextField(); txtReferenciaPago.setFont(new Font("Segoe UI", Font.PLAIN, 14)); txtReferenciaPago.setBackground(new Color(40, 40, 40)); txtReferenciaPago.setForeground(Color.WHITE); txtReferenciaPago.setCaretColor(Color.WHITE); txtReferenciaPago.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 70))); txtReferenciaPago.setPreferredSize(new Dimension(0, 32));
+        
+        pnlCamposExtraPago.add(lblBanco); pnlCamposExtraPago.add(cmbBanco); pnlCamposExtraPago.add(lblReferenciaPago); pnlCamposExtraPago.add(txtReferenciaPago);
+
+        cmbMetodoPago.addActionListener(e -> {
+            ItemPago pagoSeleccionado = (ItemPago) cmbMetodoPago.getSelectedItem();
+            if (pagoSeleccionado != null) {
+                String nombrePago = pagoSeleccionado.nombre.toLowerCase();
+                if (nombrePago.contains("transferencia") || nombrePago.contains("tarjeta")) {
+                    lblReferenciaPago.setText(nombrePago.contains("transferencia") ? "Nº Referencia / ACH:" : "Nº Voucher / Referencia:");
+                    pnlCamposExtraPago.setVisible(true);
+                } else {
+                    pnlCamposExtraPago.setVisible(false);
+                    txtReferenciaPago.setText("");
+                    cmbBanco.setSelectedIndex(0);
+                }
+                pnlLiquidacion.revalidate(); pnlLiquidacion.repaint();
+            }
+            recalcularTotales();
+        });
         
         lblSubtotal = new JLabel("Subtotal: L 0.00"); lblSubtotal.setForeground(Color.LIGHT_GRAY); lblSubtotal.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblImpuesto = new JLabel("ISV (15%): L 0.00"); lblImpuesto.setForeground(Color.LIGHT_GRAY); lblImpuesto.setFont(new Font("Segoe UI", Font.PLAIN, 14));
@@ -134,13 +179,13 @@ public class PanelPuntoVenta extends JPanel {
 
         gbc.gridy = 0; pnlLiquidacion.add(new JLabel("Método de Pago:"){{setForeground(Color.GRAY);}}, gbc);
         gbc.gridy = 1; pnlLiquidacion.add(cmbMetodoPago, gbc);
-        gbc.gridy = 2; gbc.insets = new Insets(20, 0, 0, 0); pnlLiquidacion.add(lblSubtotal, gbc);
-        gbc.gridy = 3; gbc.insets = new Insets(5, 0, 0, 0); pnlLiquidacion.add(lblImpuesto, gbc);
-        gbc.gridy = 4; gbc.insets = new Insets(15, 0, 0, 0); pnlLiquidacion.add(new JLabel("TOTAL:"){{setForeground(Color.WHITE); setFont(new Font("Segoe UI", Font.BOLD, 14));}}, gbc);
-        gbc.gridy = 5; gbc.insets = new Insets(0, 0, 20, 0); pnlLiquidacion.add(lblTotal, gbc);
-        gbc.gridy = 6; pnlLiquidacion.add(btnCobrar, gbc);
-
-        pnlControlVenta.add(pnlAcciones, BorderLayout.NORTH); pnlControlVenta.add(pnlLiquidacion, BorderLayout.CENTER);
+        gbc.gridy = 2; gbc.insets = new Insets(10, 0, 10, 0); pnlLiquidacion.add(pnlCamposExtraPago, gbc);
+        gbc.gridy = 3; gbc.insets = new Insets(15, 0, 0, 0); pnlLiquidacion.add(lblSubtotal, gbc);
+        gbc.gridy = 4; gbc.insets = new Insets(5, 0, 0, 0); pnlLiquidacion.add(lblImpuesto, gbc);
+        gbc.gridy = 5; gbc.insets = new Insets(15, 0, 0, 0); pnlLiquidacion.add(new JLabel("TOTAL:"){{setForeground(Color.WHITE); setFont(new Font("Segoe UI", Font.BOLD, 14));}}, gbc);
+        gbc.gridy = 6; gbc.insets = new Insets(0, 0, 20, 0); pnlLiquidacion.add(lblTotal, gbc);
+        gbc.gridy = 7; pnlLiquidacion.add(btnCobrar, gbc);
+        pnlControlVenta.add(pnlLiquidacion, BorderLayout.NORTH);
         this.add(pnlControlVenta, BorderLayout.EAST);
     }
 
@@ -148,8 +193,22 @@ public class PanelPuntoVenta extends JPanel {
         cmbMetodoPago.removeAllItems(); 
         VentasDAO dao = new VentasDAO();
         Map<Integer, String> metodos = dao.obtenerMetodosPago();
+        
+        ItemPago itemEfectivo = null; // Variable para atrapar la opción de Efectivo
+        
         for (Map.Entry<Integer, String> entry : metodos.entrySet()) {
-            cmbMetodoPago.addItem(new ItemPago(entry.getKey(), entry.getValue()));
+            ItemPago item = new ItemPago(entry.getKey(), entry.getValue());
+            cmbMetodoPago.addItem(item);
+            
+            // Verificamos si este método es el Efectivo
+            if (item.nombre.toLowerCase().contains("efectivo")) {
+                itemEfectivo = item;
+            }
+        }
+        
+        // Si encontramos la opción de Efectivo, la fijamos como predeterminada
+        if (itemEfectivo != null) {
+            cmbMetodoPago.setSelectedItem(itemEfectivo);
         }
     }
 
@@ -173,26 +232,63 @@ public class PanelPuntoVenta extends JPanel {
         lblTotal.setText(String.format("L %.2f", granTotal));
     }
 
-    // --- RESTRICCIÓN DE STOCK Y VALIDACIÓN ---
+   // --- RESTRICCIÓN DE STOCK Y VALIDACIÓN DE SERIE ---
     public void agregarProductoAVenta(Producto p) {
         if (p.getStockProducto() < 1) { 
             JOptionPane.showMessageDialog(this, "Stock agotado. No hay unidades disponibles en vitrina.", "Stock Insuficiente", JOptionPane.WARNING_MESSAGE); 
             return; 
         }
-        for (int i = 0; i < modeloTablaVentas.getRowCount(); i++) {
-            if ((int) modeloTablaVentas.getValueAt(i, 0) == p.getIdProducto()) {
-                int cantActual = (int) modeloTablaVentas.getValueAt(i, 3);
-                if (cantActual >= p.getStockProducto()) {
-                    JOptionPane.showMessageDialog(this, "Stock insuficiente. Solo hay " + p.getStockProducto() + " unidades en vitrina.", "Aviso", JOptionPane.WARNING_MESSAGE); 
-                    return;
+
+        String imei = null;
+        if (p.isRequiereSerie()) {
+            imei = JOptionPane.showInputDialog(this, "Este producto requiere un identificador (IMEI/ServiceTag).\nIngrese el código para: " + p.getNombreProducto(), "Validación de Garantía", JOptionPane.QUESTION_MESSAGE);
+            
+            if (imei == null || imei.trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Operación cancelada. Debe ingresar el IMEI/Serie para facturar este producto.", "Aviso", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            imei = imei.trim();
+
+            // --- VALIDACIÓN 1: EVITAR IDENTIFICADOR DUPLICADO EN LA VENTA ACTUAL ---
+            for (int i = 0; i < modeloTablaVentas.getRowCount(); i++) {
+                Object valorImeiFila = modeloTablaVentas.getValueAt(i, 8); 
+                if (valorImeiFila != null && valorImeiFila.toString().equalsIgnoreCase(imei)) {
+                    JOptionPane.showMessageDialog(this, "El identificador '" + imei + "' ya está en la lista de compras actual.", "Identificador Duplicado", JOptionPane.ERROR_MESSAGE);
+                    return; 
                 }
-                double precioUnit = (double) modeloTablaVentas.getValueAt(i, 4);
-                modeloTablaVentas.setValueAt(cantActual + 1, i, 3);
-                modeloTablaVentas.setValueAt((cantActual + 1) * precioUnit, i, 5);
-                recalcularTotales(); return;
+            }
+            
+            // --- VALIDACIÓN 2: EVITAR IDENTIFICADOR QUE YA FUE VENDIDO ANTERIORMENTE ---
+            VentasDAO daoVentas = new VentasDAO();
+            if (daoVentas.existeIdentificadorVendido(imei)) {
+                JOptionPane.showMessageDialog(this, "¡ALERTA! El identificador '" + imei + "' ya se encuentra registrado como VENDIDO en la base de datos.\nVerifique el equipo físico o contacte al administrador.", "Fraude / Error Detectado", JOptionPane.ERROR_MESSAGE);
+                return;
             }
         }
-        modeloTablaVentas.addRow(new Object[]{ p.getIdProducto(), p.getRutaImagen(), p.getNombreProducto(), 1, p.getPrecioVenta(), p.getPrecioVenta(), p.getStockProducto(), p.getRutaImagen() });
+
+        // Si NO requiere serie, agrupamos las cantidades si ya está en la tabla
+        if (!p.isRequiereSerie()) {
+            for (int i = 0; i < modeloTablaVentas.getRowCount(); i++) {
+                if ((int) modeloTablaVentas.getValueAt(i, 0) == p.getIdProducto()) {
+                    int cantActual = (int) modeloTablaVentas.getValueAt(i, 3);
+                    if (cantActual >= p.getStockProducto()) {
+                        JOptionPane.showMessageDialog(this, "Stock insuficiente. Solo hay " + p.getStockProducto() + " unidades en vitrina.", "Aviso", JOptionPane.WARNING_MESSAGE); 
+                        return;
+                    }
+                    double precioUnit = (double) modeloTablaVentas.getValueAt(i, 4);
+                    modeloTablaVentas.setValueAt(cantActual + 1, i, 3);
+                    modeloTablaVentas.setValueAt((cantActual + 1) * precioUnit, i, 5);
+                    recalcularTotales(); return;
+                }
+            }
+        }
+
+        // Si requiere serie, o es un repuesto nuevo, lo agregamos como fila independiente
+        modeloTablaVentas.addRow(new Object[]{ 
+            p.getIdProducto(), p.getRutaImagen(), p.getNombreProducto(), 1, 
+            p.getPrecioVenta(), p.getPrecioVenta(), p.getStockProducto(), p.getRutaImagen(), 
+            imei, p.getDiasGarantia() 
+        });
         recalcularTotales();
     }
 
@@ -243,17 +339,23 @@ public class PanelPuntoVenta extends JPanel {
 
     private void modificarCantidad() {
         int f = tablaVentas.getSelectedRow(); if(f < 0) return;
+        
+        // --- BLOQUEO DE SEGURIDAD PARA GARANTÍAS ---
+        if (modeloTablaVentas.getValueAt(f, 8) != null) {
+            JOptionPane.showMessageDialog(this, "No puede modificar la cantidad de un equipo que requiere Identificador.\nSi el cliente lleva varios, escanee el producto nuevamente para registrar el otro identificador.", "Acción Bloqueada", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
         int stockMaximo = (int) modeloTablaVentas.getValueAt(f, 6);
         
         JTextField txtNuevaCant = new JTextField(String.valueOf(modeloTablaVentas.getValueAt(f, 3)));
         txtNuevaCant.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         
-        // El filtro para cantidad es más estricto: NO permite puntos decimales (no puedes vender 1.5 laptops)
         txtNuevaCant.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent e) {
                 char c = e.getKeyChar();
                 if (!Character.isDigit(c) && c != java.awt.event.KeyEvent.VK_BACK_SPACE) {
-                    e.consume(); // Solo números enteros
+                    e.consume(); 
                 }
             }
         });
@@ -281,13 +383,27 @@ public class PanelPuntoVenta extends JPanel {
         modeloTablaVentas.removeRow(f); recalcularTotales();
     }
 
-    // --- PROCESO CON CONTRASEÑA ---
     private void procesarVenta() {
         if(modeloTablaVentas.getRowCount() == 0) { JOptionPane.showMessageDialog(this, "La venta está vacía.", "Aviso", JOptionPane.WARNING_MESSAGE); return; }
         
         VentasDAO dao = new VentasDAO();
         ItemPago pago = (ItemPago) cmbMetodoPago.getSelectedItem();
         if(pago == null) return;
+
+        String refPago = null;
+        String bancoSeleccionado = null;
+        if (pnlCamposExtraPago.isVisible()) {
+            if (cmbBanco.getSelectedIndex() == 0) {
+                JOptionPane.showMessageDialog(this, "Debe seleccionar el Banco Emisor para autorizar esta transacción.", "Datos Incompletos", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (txtReferenciaPago.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Ingrese el número de Referencia, Voucher o ACH del pago.", "Datos Incompletos", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            refPago = txtReferenciaPago.getText().trim();
+            bancoSeleccionado = cmbBanco.getSelectedItem().toString();
+        }
 
         JPasswordField pfPass = new JPasswordField();
         int opcion = JOptionPane.showConfirmDialog(this, new Object[]{"Ingrese su contraseña de cajero para autorizar la venta:", pfPass}, "Autorizar Cobro", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
@@ -304,13 +420,15 @@ public class PanelPuntoVenta extends JPanel {
         List<Object[]> detalles = new ArrayList<>();
         for(int i = 0; i < modeloTablaVentas.getRowCount(); i++) {
             detalles.add(new Object[]{
-                modeloTablaVentas.getValueAt(i, 0), null, modeloTablaVentas.getValueAt(i, 2),
-                modeloTablaVentas.getValueAt(i, 3), modeloTablaVentas.getValueAt(i, 4), modeloTablaVentas.getValueAt(i, 5)
+                modeloTablaVentas.getValueAt(i, 0), modeloTablaVentas.getValueAt(i, 8), modeloTablaVentas.getValueAt(i, 2),
+                modeloTablaVentas.getValueAt(i, 3), modeloTablaVentas.getValueAt(i, 4), modeloTablaVentas.getValueAt(i, 5),
+                modeloTablaVentas.getValueAt(i, 9)
             });
         }
 
-        if (dao.procesarVentaCompleta(idClienteActual, idUsuarioAutorizado, pago.id, sumSubtotal, sumImpuesto, granTotal, detalles)) {
+        if (dao.procesarVentaCompleta(idClienteActual, idUsuarioAutorizado, pago.id, sumSubtotal, sumImpuesto, granTotal, refPago, bancoSeleccionado, detalles)) {
             
+            txtReferenciaPago.setText(""); cmbBanco.setSelectedIndex(0); pnlCamposExtraPago.setVisible(false);
             JFileChooser chooser = new JFileChooser();
             chooser.setDialogTitle("Guardar e Imprimir Comprobante");
             chooser.setSelectedFile(new File("Factura_Nexar_" + System.currentTimeMillis() + ".pdf"));
@@ -319,12 +437,18 @@ public class PanelPuntoVenta extends JPanel {
                 File archivoDestino = chooser.getSelectedFile();
                 if (!archivoDestino.getName().toLowerCase().endsWith(".pdf")) archivoDestino = new File(archivoDestino.getAbsolutePath() + ".pdf");
 
-                try {
+               try {
+                    // Generamos la fecha exacta del momento en que se presiona el botón cobrar
+                    String fechaActual = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(new java.util.Date());
+
                     utilidades.GeneradorTickets.generarTicketVentaPDF(
                         archivoDestino.getAbsolutePath(), 
                         lblClienteSeleccionado.getText(), 
+                        fechaActual, // <--- PASAMOS LA FECHA ACTUAL EN VIVO
                         detalles, sumSubtotal, sumImpuesto, granTotal,
-                        facturacionHabilitada
+                        facturacionHabilitada,
+                        pago.nombre, 
+                        refPago, bancoSeleccionado
                     );
                     JOptionPane.showMessageDialog(this, "Venta registrada y comprobante generado con éxito.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
                     if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(archivoDestino);
@@ -415,6 +539,7 @@ public class PanelPuntoVenta extends JPanel {
                 }
             });
 
+            mod.addRow(new Object[]{1, "C", "CONSUMIDOR FINAL", "0000-0000-00000", "N/A"});
             for (Cliente c : new ClienteDAO().listarClientesActivos()) {
                 String nombreComp = c.getNombreCliente() + " " + (c.getApellidoCliente()!=null?c.getApellidoCliente():"");
                 String inicial = nombreComp.isEmpty() ? "?" : nombreComp.substring(0, 1).toUpperCase();
@@ -529,6 +654,120 @@ public class PanelPuntoVenta extends JPanel {
         
         JLabel lblZoom = new JLabel(new ImageIcon(imgFinal)); lblZoom.setHorizontalAlignment(SwingConstants.CENTER);
         zoomDialog.add(lblZoom, BorderLayout.CENTER); zoomDialog.setLocationRelativeTo(this); zoomDialog.setVisible(true);
+    }
+    
+    // =========================================================
+    // MENÚ CONTEXTUAL DE OPCIONES
+    // =========================================================
+    private void mostrarMenuOpciones(Component componente, int x, int y) {
+        JPopupMenu menu = new JPopupMenu();
+        menu.setBackground(new Color(35, 35, 35));
+        menu.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 70), 1));
+
+        // Inyectamos los nuevos íconos específicos para cada acción
+        JMenuItem itemModPrecio = crearMenuItem("Modificar Precio", new Color(13, 110, 253), new IconoPrecio());
+        JMenuItem itemModCant = crearMenuItem("Modificar Cantidad", new Color(25, 135, 84), new IconoCantidad());
+        JMenuItem itemQuitar = crearMenuItem("Quitar Producto", new Color(220, 53, 69), new IconoBasurero());
+
+        itemModPrecio.addActionListener(e -> modificarPrecio());
+        itemModCant.addActionListener(e -> modificarCantidad());
+        itemQuitar.addActionListener(e -> quitarProducto());
+
+        menu.add(itemModPrecio);
+        menu.add(itemModCant);
+        menu.addSeparator(); 
+        menu.add(itemQuitar);
+        
+        menu.show(componente, x, y);
+    }
+    
+    private JMenuItem crearMenuItem(String texto, Color colorHover, Icon icono) {
+        JMenuItem item = new JMenuItem(texto);
+        item.setIcon(icono);
+        item.setIconTextGap(12);
+        item.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        item.setForeground(Color.WHITE);
+        item.setBackground(new Color(35, 35, 35));
+        item.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        item.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        item.setOpaque(true);
+        
+        item.addChangeListener(e -> {
+            if (item.isArmed()) item.setBackground(colorHover);
+            else item.setBackground(new Color(35, 35, 35));
+        });
+        return item;
+    }
+
+    // =========================================================
+    // ÍCONOS VECTORIALES ESPECÍFICOS (JAVA 2D)
+    // =========================================================
+    private class IconoPrecio implements Icon {
+        @Override public int getIconWidth() { return 20; }
+        @Override public int getIconHeight() { return 20; }
+        @Override public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(Color.WHITE);
+            g2.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+            // Dibujo de una Etiqueta de Precio detallada
+            g2.drawRoundRect(x + 2, y + 4, 16, 12, 3, 3); // Cuerpo de la etiqueta
+            g2.drawOval(x + 5, y + 8, 4, 4); // Orificio para el cordón
+            
+            // Líneas horizontales simétricas que simulan el valor/código de barras
+            g2.setStroke(new BasicStroke(1.5f));
+            g2.drawLine(x + 12, y + 7, x + 15, y + 7);
+            g2.drawLine(x + 11, y + 11, x + 15, y + 11);
+            g2.dispose();
+        }
+    }
+
+    private class IconoCantidad implements Icon {
+        @Override public int getIconWidth() { return 20; }
+        @Override public int getIconHeight() { return 20; }
+        @Override public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(Color.WHITE);
+            g2.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+            // Dibujo de dos Cajas Apiladas (Representa inventario físico/unidades)
+            // 1. Caja de atrás (arriba a la derecha)
+            g2.drawRect(x + 7, y + 3, 10, 9);
+            
+            // Mascara de fondo oscuro intermedio para evitar que las líneas se crucen feo
+            g2.setColor(new Color(35, 35, 35));
+            g2.fillRect(x + 3, y + 8, 10, 9);
+            
+            // 2. Caja de adelante (abajo a la izquierda)
+            g2.setColor(Color.WHITE);
+            g2.drawRect(x + 3, y + 8, 10, 9);
+            
+            // Detalle: Cinta de empaque de la caja frontal
+            g2.setStroke(new BasicStroke(1.2f));
+            g2.drawLine(x + 3, y + 12, x + 13, y + 12);
+            g2.dispose();
+        }
+    }
+
+    private class IconoBasurero implements Icon {
+        @Override public int getIconWidth() { return 20; }
+        @Override public int getIconHeight() { return 20; }
+        @Override public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(new Color(220, 53, 69)); // Rojo Nexar
+            g2.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+            g2.drawRoundRect(x + 8, y + 2, 4, 3, 2, 2);
+            g2.drawLine(x + 4, y + 5, x + 16, y + 5);
+            g2.drawRoundRect(x + 5, y + 5, 10, 12, 3, 3);
+            g2.setStroke(new BasicStroke(1.5f));
+            g2.drawLine(x + 8, y + 8, x + 8, y + 14);
+            g2.drawLine(x + 12, y + 8, x + 12, y + 14);
+            g2.dispose();
+        }
     }
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
